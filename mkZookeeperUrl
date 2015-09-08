@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import lib
+
+
+def zk_entries(spec, zk_groupname='zookeeper'):
+    name_to_node = lib.build_inventory_mapping(spec)
+
+    for groupname, group in lib.inventory(spec):
+        if not groupname == zk_groupname:
+            continue
+
+        for node in group:
+            port = lib.get_with_defaults(node, 'zk_port', spec)
+            ip = node['ip']
+            entry = '{ip}:{port}'.format(ip=ip, port=port)
+            yield entry
+
+
+def zk_url(spec, zk_groupname='zookeeper'):
+    entries = ','.join(zk_entries(spec, zk_groupname=zk_groupname))
+    return 'zk://{entries}/mesos'.format(entries=entries)
+
+if __name__ == '__main__':
+    import sys
+    spec_path = sys.argv[1]
+    spec = lib.read_spec(spec_path)
+    print zk_url(spec)
