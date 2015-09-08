@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+
+import yaml
+
+
+def read_spec(path):
+    with open(path) as fd:
+        return yaml.load(fd)
+
+
+def get_with_defaults(definition, attr, spec):
+    return definition.get(attr, spec['defaults'].get(attr))
+
+def dump_inventory(spec):
+    for groupname, group in spec['inventory'].iteritems():
+        print '[{}]'.format(groupname)
+
+        for node in group:
+            key = get_with_defaults(node, 'key_path', spec)
+            print '{name} ansible_ssh_private_key_file={key}'\
+                .format(name=node['ip'],
+                        key=key)
+
+        print
+
+if __name__ == '__main__':
+    import sys
+    spec_path = sys.argv[1]
+    spec = read_spec(spec_path)
+    dump_inventory(spec)
