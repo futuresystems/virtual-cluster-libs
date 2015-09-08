@@ -3,6 +3,14 @@
 import yaml
 
 
+def mk_inventory_entry(**kws):
+    return """\
+{name} \
+ansible_ssh_host={ip} \
+ansible_ssh_private_key_file={key}\
+""".format(**kws)
+
+
 def read_spec(path):
     with open(path) as fd:
         return yaml.load(fd)
@@ -11,17 +19,38 @@ def read_spec(path):
 def get_with_defaults(definition, attr, spec):
     return definition.get(attr, spec['defaults'].get(attr))
 
-def dump_inventory(spec):
-    for groupname, group in spec['inventory'].iteritems():
-        print '[{}]'.format(groupname)
+def build_inventory_mapping(spec):
+    name_to_node = {}
+    for machine in spec['machines']:
+        assert machine['name'] not in name_to_node
+        name_to_node[machine['name']] = machine
 
-        for node in group:
-            key = get_with_defaults(node, 'key_path', spec)
-            print '{name} ansible_ssh_private_key_file={key}'\
-                .format(name=node['ip'],
-                        key=key)
+    return name_to_node
+
+def dump_inventory(spec):
+    name_to_node = build_inventory_mapping(spec)
+
+    # the virtual group is used to preserve order in the generated
+    # inventory file
+
+    for virtual_group in spec['inventory']:
+
+        for groupname, group in virtual_group.iteritems():
+
+            print '[{}]'.format(groupname)
+
+            for nodename in group:
+                node = name_to_node[nodename]
+                key = get_with_defaults(node, 'key_path', spec)
+
+                entry = mk_inventory_entry(
+                    name=nodename,
+                    ip=node['ip'],
+                    key=key)
+                print entry
 
         print
+
 
 if __name__ == '__main__':
     import sys
