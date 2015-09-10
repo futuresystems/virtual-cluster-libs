@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 
 import yaml
+import os.path
 
+
+def fullpath(path):
+    from os.path import abspath, expanduser, expandvars
+    return abspath(expanduser(expandvars(path)))
 
 
 def read_spec(path):

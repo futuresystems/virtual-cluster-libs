@@ -20,11 +20,12 @@ def dump_inventory(spec):
 
         for node in group:
             key = lib.get_with_defaults(node, 'key_path', spec)
+            key_path = lib.fullpath(key)
 
             entry = mk_inventory_entry(
                 name=node['name'],
                 ip=node['ip'],
-                key=key)
+                key=key_path)
             print entry
 
         print
