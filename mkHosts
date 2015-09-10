@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import lib
+
+localhost_entry_ipv4 = '127.0.0.1 localhost'
+localhost_entry_ipv6 = '::1 localhost'
+    
+
+def hosts_file_entry(spec, node):
+    domain = lib.get_with_defaults(node, 'domain_name', spec)
+    hostname = node['name']
+
+    fqdn = '{hn}.{dn}'.format(
+        hn=hostname,
+        dn=domain)
+
+    entry = '{ip} {hn} {fqdn}'.format(
+        ip=node['ip'],
+        hn=hostname,
+        fqdn=fqdn)
+
+    return entry
+
+def hosts_file(spec):
+
+    entries = [
+        localhost_entry_ipv4,
+        localhost_entry_ipv6
+    ] + [
+        hosts_file_entry(spec, node)
+        for node in spec['machines']
+    ]
+
+    return '\n'.join(entries)
+
+if __name__ == '__main__':
+    import sys
+    spec_path = sys.argv[1]
+    spec = lib.read_spec(spec_path)
+    hosts = hosts_file(spec)
+    print hosts
