@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+import lib
+import yaml
+import os
+import os.path
+
+def get_variables(host_spec):
+    return yaml.dump(host_spec, default_flow_style=False, default_style='')
+
+
+def get_vars(spec, key):
+    for host, vars in spec[key].iteritems():
+        print host
+        print vars
+        print
+        yield (host, get_variables(vars))
+
+
+def write_vars(spec, key, outdir):
+
+    if key not in spec: return
+
+    for host, vars in get_vars(spec, key=key):
+
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+        out = os.path.join(outdir, host)
+        with open(out, 'w') as fd:
+            fd.write(vars)
+
+
+
+
+if __name__ == '__main__':
+    import sys
+    spec_path = sys.argv[1]
+    spec = lib.read_spec(spec_path)
+
+    write_vars(spec, 'hostvars', 'host_vars')
+    write_vars(spec, 'groupvars', 'group_vars')
