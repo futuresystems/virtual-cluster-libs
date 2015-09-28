@@ -147,7 +147,6 @@ if __name__ == '__main__':
             # cinder not yet supported
             del node['extra_disks']
 
-        break
 
     with open(out_path, 'w') as fd:
         import yaml
