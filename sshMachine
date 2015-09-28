@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+
+import lib
+import subprocess
+
+
+if __name__ == '__main__':
+    import sys
+    spec_path = sys.argv[1]
+    name = sys.argv[2]
+    args = sys.argv[3:]
+    spec = lib.read_spec(spec_path)
+    node = [n for n in spec['machines'] if n['name'] == name][0]
+    ip = node['ip']
+
+    cmd = [
+        'ssh',
+        '-o', 'UserKnownHostsFile=/dev/null',
+        '-o', 'StrictHostKeyChecking=no',
+        ip
+        ] + args
+
+    subprocess.call(cmd)
