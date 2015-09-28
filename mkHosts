@@ -6,7 +6,7 @@ localhost_entry_ipv4 = '127.0.0.1 localhost'
 localhost_entry_ipv6 = '::1 localhost'
     
 
-def hosts_file_entry(spec, node):
+def hosts_file_entry(spec, node, attr='ip'):
     domain = lib.get_with_defaults(node, 'domain_name', spec)
     hostname = node['name']
 
@@ -15,19 +15,20 @@ def hosts_file_entry(spec, node):
         dn=domain)
 
     entry = '{ip} {hn} {fqdn}'.format(
-        ip=node['ip'],
+        ip=node[attr],
         hn=hostname,
         fqdn=fqdn)
 
     return entry
 
-def hosts_file(spec):
+
+def hosts_file(spec, attr='ip'):
 
     entries = [
         localhost_entry_ipv4,
         localhost_entry_ipv6
     ] + [
-        hosts_file_entry(spec, node)
+        hosts_file_entry(spec, node, attr=attr)
         for node in spec['machines']
     ]
 
@@ -36,6 +37,11 @@ def hosts_file(spec):
 if __name__ == '__main__':
     import sys
     spec_path = sys.argv[1]
+    try:
+        attr = sys.argv[2]
+    except IndexError:
+        attr = 'ip'
+
     spec = lib.read_spec(spec_path)
-    hosts = hosts_file(spec)
+    hosts = hosts_file(spec, attr=attr)
     print hosts
