@@ -148,6 +148,6 @@ if __name__ == '__main__':
             del node['extra_disks']
 
 
-    with open(out_path, 'w') as fd:
-        import yaml
-        fd.write(yaml.dump(spec, default_flow_style=False))
+        with open(out_path, 'w') as fd:
+            import yaml
+            fd.write(yaml.dump(spec, default_flow_style=False))
