@@ -40,13 +40,19 @@ if __name__ == '__main__':
 
         ################################################## boot
 
-        vm = nova.servers.create(
-            node['name'],
-            image,
-            flavor,
-            key_name=key_name,
-            nics=nics
-        )
+        try:
+            nova.servers.find(name=node['name'])
+            print 'Skipping'
+            continue
+        except novaclient.exceptions.NotFound:
+
+            vm = nova.servers.create(
+                node['name'],
+                image,
+                flavor,
+                key_name=key_name,
+                nics=nics
+            )
 
         def is_active():
             instance = nova.servers.get(vm.id)
