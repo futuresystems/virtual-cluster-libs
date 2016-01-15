@@ -1,5 +1,10 @@
 
 defaults = {
+    'netmask': '255.255.0.0',
+    'public_key': '~/.ssh/id_rsa.pub',
+    'domain_name': 'local',
+    'extra_disks': {},
+
     'libvirt': {
         'cpus' : 1,
         'memory': 1024
@@ -9,12 +14,15 @@ defaults = {
         'futuresystems': {
             'flavor': 'm1.large',
             'image': 'ubuntu-14.04',
-            'key-name': 'gambit',
+            'key_name': 'gambit',
             'network': 'fgXYZ-net',
+            'assign_floating_ip': False, 
             'floating_ip_pool': 'ext-net',
             'security_groups': ['default'],
         },
     },
+
+    'openstack_cloud': 'futuresystems',
 
     'vagrant': {
         'provider': 'libvirt',
@@ -32,7 +40,7 @@ zk = lambda i: {
 master = lambda i: {
     'master%d' % i: {
         'ip': '10.0.1.{}'.format(i+10),
-        'openstack.futuresystems': {'security_groups': ['default', 'hadoop-status']}
+        'openstack/futuresystems': {'security_groups': ['default', 'hadoop-status']}
     }
 }
 
@@ -45,15 +53,14 @@ slave = lambda i: {
 frontend = lambda i: {
     'frontend%d' % i: {
         'ip': '10.0.3.{}'.format(i+10),
-        'extra_disks': {'device': 'vdb',
-                        'size': '10G',}
+        'extra_disks': {'vdb': {'size': '10G'}}
     }
 }
 
 loadbalancer = lambda i: {
     'loadbalancer%d' % i: {
         'ip': '10.0.4.{}'.format(i+10),
-        'openstack.futuresystems': {'flavor': 'm1.medium',
+        'openstack/futuresystems': {'flavor': 'm1.medium',
                           'security_groups': ['default', 'sshlb'],}
 
     }
@@ -68,7 +75,7 @@ monitor = lambda i: {
 gluster = lambda i: {
     'gluster%d' % i: {
         'ip': '10.0.6.{}'.format(i+10),
-        'openstack.futuresystems': {'flavor': 'm1.large',}
+        'openstack/futuresystems': {'flavor': 'm1.large',}
 
     }
 }
