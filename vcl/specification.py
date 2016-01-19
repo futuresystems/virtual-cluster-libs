@@ -1,6 +1,4 @@
 
-
-import yaml
 import traits.api as T
 from traits.api import HasTraits, TraitHandler
 import argparse
