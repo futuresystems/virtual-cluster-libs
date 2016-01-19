@@ -10,19 +10,17 @@ defaults = {
         'memory': 1024
     },
 
-    'openstack': {
-        'futuresystems': {
-            'flavor': 'm1.large',
-            'image': 'ubuntu-14.04',
-            'key_name': 'gambit',
-            'network': 'fgXYZ-net',
-            'assign_floating_ip': False, 
-            'floating_ip_pool': 'ext-net',
-            'security_groups': ['default'],
-        },
+    'openstack_futuresystems': {
+        'flavor': 'm1.large',
+        'image': 'ubuntu-14.04',
+        'key_name': 'gambit',
+        'network': 'fgXYZ-net',
+        'assign_floating_ip': False, 
+        'floating_ip_pool': 'ext-net',
+        'security_groups': ['default'],
     },
 
-    'openstack_cloud': 'futuresystems',
+    'openstack_cloud': 'openstack_futuresystems',
 
     'vagrant': {
         'provider': 'libvirt',
@@ -60,8 +58,8 @@ frontend = lambda i: {
 loadbalancer = lambda i: {
     'loadbalancer%d' % i: {
         'ip': '10.0.4.{}'.format(i+10),
-        'openstack/futuresystems': {'flavor': 'm1.medium',
-                          'security_groups': ['default', 'sshlb'],}
+        'openstack_futuresystems': {'flavor': 'm1.medium',
+                                    'security_groups': ['default', 'sshlb'],}
 
     }
 }
@@ -121,11 +119,11 @@ def combine(name, *groups):
 
     def work():
         for group in groups:
-            print 'group =', group.keys()
+            # print 'group =', group.keys()
             for names in group.itervalues():
-                print 'names =', names
+                # print 'names =', names
                 for n in names:
-                    print 'n =', n
+                    # print 'n =', n
                     yield n
 
     return {name: list(sorted(set(work())))}
@@ -153,11 +151,27 @@ inventory = [
     hadoopnodes,
 ]
 
+
+
+# from argparse import Namespace
+
+# def mk_namespace(d):
+#     for k in d.iterkeys():
+#         v = d[k]
+#         if isinstance(v, dict):
+#             d[k] = mk_namespace(d[k])
+#     return Namespace(**d)
+
+
 spec = {
     'defaults': defaults,
     'machines': machines,
     'inventory': inventory,
 }
 
-import yaml
-print yaml.dump(spec, default_flow_style=False)
+# from vcl.specification import mk_specification
+# print mk_specification(spec).defaults.openstack.futuresystems.image
+
+
+# import yaml
+# print yaml.dump(spec, default_flow_style=False)
