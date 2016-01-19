@@ -5,12 +5,11 @@ from vcl.util.openstack import get_client, find_by_query, wait_until
 
 def main(spec, provider, **kws):
 
-    machines = spec.machines
     cloud = spec.defaults.openstack_cloud
 
     nova = get_client()
 
-    for node in machines:
+    for node in spec.machines:
         print node['name']
 
         image_name = node.openstack.image()
