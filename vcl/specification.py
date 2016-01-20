@@ -2,6 +2,7 @@
 import traits.api as T
 from traits.api import HasTraits, TraitHandler
 import argparse
+from itertools import chain
 
 class Namespace(TraitHandler):
 
@@ -64,8 +65,11 @@ def mk_node_class(provider, spec):
         clazz = LibvirtNode
 
     elif provider == 'openstack':
-        cloudname = spec.defaults.openstack_cloud
-        parms = getattr(spec.defaults, cloudname)
+        try:
+            cloudname = spec.defaults.openstack_cloud
+            parms = getattr(spec.defaults, cloudname)
+        except AttributeError:
+            parms = spec.defaults.openstack
 
         class OpenstackNode(Node):
             flavor = T.String(parms.flavor)
@@ -146,3 +150,36 @@ def mk_namespace(spec_dict):
         return argparse.Namespace(**obj)
 
     return mk(spec_dict)
+
+
+
+def expand(fn, count):
+    def mk():
+        for i in xrange(count):
+            yield fn(i)
+    return list(mk())
+
+
+
+def group(name, groupdef):
+
+    def names():
+        for fn, indices in groupdef:
+            for i in indices:
+                yield fn(i).keys()
+
+    return {name: list(chain(*names()))}
+
+
+def combine(name, *groups):
+
+    def work():
+        for group in groups:
+            # print 'group =', group.keys()
+            for names in group.itervalues():
+                # print 'names =', names
+                for n in names:
+                    # print 'n =', n
+                    yield n
+
+    return {name: list(sorted(set(work())))}
