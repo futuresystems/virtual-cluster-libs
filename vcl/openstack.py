@@ -59,8 +59,6 @@ def wait_until(expr, sleep_time=1, max_time=30):
 
 def boot(nodes, **kws):
 
-    print 'Openstack Boot'
-
     nova = get_client()
 
     for node in nodes:
@@ -117,19 +115,34 @@ def boot(nodes, **kws):
 
         ################################################## floating ip
 
-        if node.assign_floating_ip:
+        if node.create_floating_ip:
+            print 'Adding floating ip'
             try:
                 # first try to get a free ip
                 floating_ip = nova.floating_ips.findall(instance_id=None)[0]
             except IndexError:
-                pool = nova.openstack.floating_ip_pool()
-                ip = nova.floating_ips.create(pool=pool)
+                pool = node.floating_ip_pool
+                floating_ip = nova.floating_ips.create(pool=pool)
 
-            # # usefull for regenerating a spec file
+            vm.add_floating_ip(floating_ip)
+
+            # usefull for regenerating a spec file
+            node.floating_ips.append(str(floating_ip.ip))
             # node.set_dynamic('floating_ip', str(ip.ip))
 
-            vm.add_floating_ip(ip)
 
+        ################################################## internal ip
+
+        instance = nova.servers.get(vm.id)
+        addresses = instance.addresses[net_name]
+        fixed_addresses = [
+            a['addr']
+            for a in addresses
+            if a['OS-EXT-IPS:type'] == 'fixed'
+        ]
+        assert len(fixed_addresses) == 1, fixed_addresses
+        internal_ip = fixed_addresses[0]
+        node.ip = internal_ip
 
         ################################################## extra discs
 

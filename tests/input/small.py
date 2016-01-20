@@ -14,8 +14,8 @@ defaults = {
         'flavor': 'm1.large',
         'image': 'Ubuntu-14.04-64',
         'key_name': gethostname(),
-        'network': 'systest-net',
-        'assign_floating_ip': False,
+        'network': 'fg475-net',
+        'create_floating_ip': True,
         'floating_ip_pool': 'ext-net',
         'security_groups': ['default'],
     },
@@ -28,7 +28,7 @@ vcl = lambda i: {
     },
 }
 
-N_VCL = 2
+N_VCL = 1
 machines = list(chain(
     expand(vcl, N_VCL)
 ))

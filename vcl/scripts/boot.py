@@ -4,6 +4,7 @@ from vcl.specification import mk_namespace, mk_nodes
 from vcl import openstack
 # from vcl.boot import libvirt
 
+import yaml
 import argparse as A
 import imp
 import uuid
@@ -18,6 +19,7 @@ def getopts():
     p = A.ArgumentParser(description='Startup virtual machines')
     p.add_argument('--provider', '-p', required=True)
     p.add_argument('specfile', metavar='FILE', default='spec.py')
+    p.add_argument('--inventory', '-i', default='inventory.yaml')
 
     return p.parse_args()
 
@@ -38,3 +40,6 @@ if __name__ == '__main__':
     nodes = mk_nodes(opts.provider, mk_namespace(mod.spec))
 
     main(opts.provider, nodes)
+
+    # TODO: write_inventory(opts.inventory, mod.inventory, nodes)
+    

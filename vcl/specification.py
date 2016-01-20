@@ -4,7 +4,7 @@ from traits.api import HasTraits, TraitHandler
 import argparse
 from itertools import chain
 
-class Namespace(TraitHandler):
+class NamespaceTraitHandler(TraitHandler):
 
     def validate(self, object, name, value):
         if isinstance(value, argparse.Namespace):
@@ -12,8 +12,9 @@ class Namespace(TraitHandler):
         else:
             self.error(object, name, value)
 
+Namespace = T.Trait(NamespaceTraitHandler())
 
-class IPv4(TraitHandler):
+class IPv4TraitHandler(TraitHandler):
 
     def _components(self, value):
         parts = value.split('.')
@@ -39,6 +40,8 @@ class IPv4(TraitHandler):
     def info(self):
         return "**an IPv4 address**"
 
+IPv4 = T.Trait(IPv4TraitHandler())
+
 
 def mk_node_class(provider, spec):
     """str -> Namespace -> type
@@ -51,7 +54,7 @@ def mk_node_class(provider, spec):
 
     class Node(HasTraits):
         hostname = T.String()
-        ip = T.Trait(IPv4())
+        ip = IPv4()
         netmask = T.Trait(spec.defaults.netmask, IPv4())
         public_key = T.String(spec.defaults.public_key)
         domain_name = T.String(spec.defaults.domain_name)
@@ -76,8 +79,10 @@ def mk_node_class(provider, spec):
             image = T.String(parms.image)
             key_name = T.String(parms.key_name)
             network = T.String(parms.network)
-            assign_floating_ip = T.Bool(parms.assign_floating_ip)
+            create_floating_ip = T.Bool(parms.create_floating_ip)
+            floating_ip_pool = T.String(parms.floating_ip_pool)
             security_groups = T.ListStr(parms.security_groups)
+            floating_ips = T.List(IPv4)
         clazz = OpenstackNode
 
     elif provider == 'vagrant':
