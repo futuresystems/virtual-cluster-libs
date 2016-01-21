@@ -1,1 +1,1 @@
-((python-mode . ((project-venv-name . "virtual-clusters-libs"))))
+((python-mode . ((project-venv-name . "virtual-cluster-libs"))))
