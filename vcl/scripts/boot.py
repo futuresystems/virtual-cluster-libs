@@ -1,7 +1,8 @@
 
 
-from vcl.specification import mk_namespace, mk_nodes, load_spec
+from vcl.specification import update_spec, mk_nodes, load, inventory_format
 from vcl import openstack
+import yaml
 # from vcl.boot import libvirt
 
 import argparse as A
@@ -19,24 +20,40 @@ def getopts():
     p.add_argument('specfile', metavar='FILE', default='spec.py')
     p.add_argument('--inventory', '-i', default='inventory.yaml')
     p.add_argument('--dry-run', '-n', default=False, action='store_true')
+    p.add_argument('--machines', '-m', default='machines.yml')
 
     return p.parse_args()
 
 
-def main(provider, nodes, *args, **kws):
+def main(opts):
     global __PROVIDERS
 
-    module = __PROVIDERS[provider]
-    module.boot(nodes, *args, **kws)
+    spec = load(opts.specfile)
+    nodes = mk_nodes(opts.provider, spec)
+    update_spec(spec, nodes)
+
+    module = __PROVIDERS[opts.provider]
+    machines = module.boot(nodes, dry_run=opts.dry_run)
+
+    with open(opts.machines, 'w') as fd: fd.write('')
+
+    for m in machines:
+        with open(opts.machines, 'a') as fd:
+            o = {m.hostname: m}
+            s = yaml.dump(o, default_flow_style=False,
+                          canonical=False, default_style='')
+            fd.write(s)
+
+    with open(opts.inventory, 'w') as fd:
+        i = inventory_format(spec)
+        fd.write(i)
+
+    # TODO: write_inventory(opts.inventory, mod.inventory, nodes)
+
 
 
 if __name__ == '__main__':
     opts = getopts()
 
-    spec = load_spec(opts.specfile)
-    nodes = mk_nodes(opts.provider, mk_namespace(spec))
-
-    main(opts.provider, nodes, dry_run=opts.dry_run)
-
-    # TODO: write_inventory(opts.inventory, mod.inventory, nodes)
+    main(opts)
     

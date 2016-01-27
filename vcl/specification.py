@@ -42,7 +42,7 @@ class IPv4TraitHandler(TraitHandler):
     def info(self):
         return "**an IPv4 address**"
 
-IPv4 = T.Trait(IPv4TraitHandler())
+TIPv4 = T.Trait(IPv4TraitHandler())
 
 
 def mk_node_class(provider, spec):
@@ -56,9 +56,10 @@ def mk_node_class(provider, spec):
 
     class Node(HasTraits):
         hostname = T.String()
-        ip = IPv4()
-        netmask = T.Trait(spec.defaults.netmask, IPv4())
-        public_key = T.String(spec.defaults.public_key)
+        ip = TIPv4()
+        netmask = T.Trait(spec.defaults.netmask, TIPv4())
+        public_key = T.File(spec.defaults.public_key)
+        private_key = T.File(spec.defaults.private_key)
         domain_name = T.String(spec.defaults.domain_name)
         extra_disks = T.Dict(vars(spec.defaults.extra_disks))
     clazz = Node
@@ -80,7 +81,7 @@ def mk_node_class(provider, spec):
             create_floating_ip = T.Bool(parms.create_floating_ip)
             floating_ip_pool = T.String(parms.floating_ip_pool)
             security_groups = T.ListStr(parms.security_groups)
-            floating_ips = T.List(IPv4)
+            floating_ip = TIPv4
         clazz = OpenstackNode
 
     elif provider == 'vagrant':
@@ -129,6 +130,31 @@ def mk_nodes(provider, spec):
             yield node
 
     return list(mk())
+
+
+def update_spec(spec, nodes):
+    """Namespace -> [Node] -> ()
+
+    Updates *in-place* `spec` with `nodes`
+    """
+
+    lookup = {}
+    for n in nodes:
+        lookup[n.hostname] = n
+    assert len(lookup) == len(nodes)
+
+    assert len(spec.machines) == len(nodes)
+    spec.machines = nodes
+
+    for group in spec.inventory:
+        assert len(group) == 1, group
+        groupname = group.keys()[0]
+        hostnames = group.values()[0]
+
+        for i in xrange(len(hostnames)):
+            hostname = hostnames[i]
+            group[groupname][i] = lookup[hostname]
+
 
 
 def mk_namespace(spec_dict):
@@ -188,16 +214,52 @@ def combine(name, *groups):
     return {name: list(sorted(set(work())))}
 
 
-def load_spec(path):
+def inventory_format(spec):
+    from pxul.StringIO import StringIO
+    from pxul.os import fullpath
+
+    with StringIO() as sio:
+
+        for group in spec.inventory:
+            assert len(group) == 1
+            name = group.keys()[0]
+            nodes = group.values()[0]
+
+            sio.writeln('[{}]'.format(name))
+
+            for node in nodes:
+                sio.write('{host} ansible_ssh_host={ip}'\
+                          .format(host = node.hostname,
+                                  ip   = node.ip))
+
+                sio.write(' ansible_ssh_private_key={}'\
+                          .format(fullpath(node.private_key)))
+
+                sio.write('\n')
+
+            sio.writeln('')
+
+        return sio.getvalue()
+
+
+    # return yaml.dump(inv, default_flow_style=False)
+
+
+def load(path):
     
     modname = 'module_' + uuid.uuid1().hex
     moddesc = ('.py', 'r', imp.PY_SOURCE) # FIXME: .py
     mod = imp.load_module(modname, open(path), path, moddesc)
-    return mod.spec
+    return mk_namespace(mod.spec)
 
 
 if __name__ == '__main__':
     import sys
     path = sys.argv[1]
-    spec = load_spec(path)
-    print spec
+    spec = load(path)
+    # print spec
+    
+    nodes = mk_nodes('openstack', spec)
+    update_spec(spec, nodes)
+
+    print inventory_format(spec)

@@ -70,7 +70,9 @@ def boot(nodes, dry_run=False, **kws):
         net_name = node.network
         sec_groups = node.security_groups
 
-        if dry_run: continue
+        if dry_run:
+            yield node
+            continue
 
         ################################################## upload key if needed
 
@@ -129,7 +131,7 @@ def boot(nodes, dry_run=False, **kws):
             vm.add_floating_ip(floating_ip)
 
             # usefull for regenerating a spec file
-            node.floating_ips.append(str(floating_ip.ip))
+            node.floating_ip = floating_ip.ip
             # node.set_dynamic('floating_ip', str(ip.ip))
 
 
@@ -155,3 +157,4 @@ def boot(nodes, dry_run=False, **kws):
 
 
         ################################################## save
+        yield node

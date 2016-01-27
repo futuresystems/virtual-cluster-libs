@@ -1,9 +1,11 @@
 
+from socket import gethostname
 import os
 
 defaults = {
     'netmask': '255.255.0.0',
     'public_key': '~/.ssh/id_rsa.pub',
+    'private_key': '~/.ssh/id_rsa',
     'domain_name': 'local',
     'extra_disks': {},
 
@@ -15,7 +17,7 @@ defaults = {
     'openstack': {
         'flavor': 'm1.large',
         'image': 'Ubuntu-14.04-64',
-        'key_name': 'gambit',
+        'key_name': gethostname(),
         'network': '{}-net'.format(os.getenv('OS_PROJECT_NAME')),
         'create_floating_ip': False, 
         'floating_ip_pool': 'ext-net',
@@ -79,66 +81,38 @@ gluster = lambda i: {
     }
 }
 
-def expand(fn, count):
-    def _work():
-        for i in xrange(count):
-            yield fn(i)
-    return list(_work())
 
-from itertools import chain
+from vcl.specification import expand, group, combine, chain
+
+N_ZK = 3
+N_MASTER = 3
+N_SLAVE = 12
+N_FRONTEND = 3
+N_LOADBALANCER = 3
+N_MONITOR = 1
+N_GLUSTER = 6
 
 machines = list(chain(
-    expand(zk, 3),
-    expand(master, 3),
-    expand(slave, 12),
-    expand(frontend, 3),
-    expand(loadbalancer, 3),
-    expand(monitor, 1),
-    expand(gluster, 6)
+    expand(zk, N_ZK),
+    expand(master, N_MASTER),
+    expand(slave, N_SLAVE),
+    expand(frontend, N_FRONTEND),
+    expand(loadbalancer, N_LOADBALANCER),
+    expand(monitor, N_MONITOR),
+    expand(gluster, N_GLUSTER)
 ))
 
-
-
-
-group0 = lambda name, getters: \
-        {name:
-         list(chain(*list(chain(*[
-            map(dict.keys, expand(fn, count)) for fn, count in getters
-        ]))))}
-
-def group(name, groupdef):
-
-    def names():
-        for fn, indices in groupdef:
-            for i in indices:
-                yield fn(i).keys()
-
-    return {name: list(chain(*names()))}
-
-
-def combine(name, *groups):
-
-    def work():
-        for group in groups:
-            # print 'group =', group.keys()
-            for names in group.itervalues():
-                # print 'names =', names
-                for n in names:
-                    # print 'n =', n
-                    yield n
-
-    return {name: list(sorted(set(work())))}
-
-
-zookeepers = group('zookeepers', [(zk, xrange(3))])
-namenodes = group('namenodes', [(master, [1,2])])
-journalnodes = group('journalnodes', [(master, xrange(3))])
-historyservers = group('historyservers', [(master, [3])])
-resourcemanagers = group('resourcemanagers', [(master, xrange(3))])
-datanodes = group('datanodes', [(slave, xrange(12))])
-frontends = group('frontends', [(frontend, xrange(3))])
-glusternodes = group('glusternodes', [(gluster, xrange(6))])
+zookeepers = group('zookeepernodes', [(zk, xrange(N_ZK))])
+namenodes = group('namenodes', [(master, [0,1])])
+journalnodes = group('journalnodes', [(master, xrange(N_MASTER))])
+historyservers = group('historyservernodes', [(master, [2])])
+resourcemanagers = group('resourcemanagernodes', [(master, xrange(N_MASTER))])
+datanodes = group('datanodes', [(slave, xrange(N_SLAVE))])
+frontends = group('frontendnodes', [(frontend, xrange(N_FRONTEND))])
+glusternodes = group('glusternodes', [(gluster, xrange(N_GLUSTER))])
 hadoopnodes = combine('hadoopnodes', namenodes, datanodes, journalnodes, historyservers)
+loadbalancer = group('loadbalancernodes', [(loadbalancer, xrange(N_LOADBALANCER))])
+monitor = group('monitornodes', [(monitor, xrange(N_MONITOR))])
 
 inventory = [
     zookeepers,
@@ -150,18 +124,9 @@ inventory = [
     frontends,
     glusternodes,
     hadoopnodes,
+    loadbalancer,
+    monitor,
 ]
-
-
-
-# from argparse import Namespace
-
-# def mk_namespace(d):
-#     for k in d.iterkeys():
-#         v = d[k]
-#         if isinstance(v, dict):
-#             d[k] = mk_namespace(d[k])
-#     return Namespace(**d)
 
 
 spec = {
@@ -170,8 +135,6 @@ spec = {
     'inventory': inventory,
 }
 
-# from vcl.specification import mk_specification
-# print mk_specification(spec).defaults.openstack.image
 
 
 # import yaml
