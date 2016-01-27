@@ -15,12 +15,18 @@ __PROVIDERS = dict(
 
 
 def getopts():
+
+    from .defaults import \
+          spec_filename \
+        , inventory_filename \
+        , machines_filename
+
     p = A.ArgumentParser(description='Startup virtual machines')
     p.add_argument('--provider', '-p', required=True)
-    p.add_argument('specfile', metavar='FILE', default='spec.py')
-    p.add_argument('--inventory', '-i', default='inventory.yaml')
+    p.add_argument('specfile', metavar='FILE', default=spec_filename)
+    p.add_argument('--inventory', '-i', default=inventory_filename)
     p.add_argument('--dry-run', '-n', default=False, action='store_true')
-    p.add_argument('--machines', '-m', default='machines.yml')
+    p.add_argument('--machines', '-m', default=machines_filename)
 
     return p.parse_args()
 
