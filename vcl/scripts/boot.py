@@ -18,6 +18,7 @@ def getopts():
     p.add_argument('--provider', '-p', required=True)
     p.add_argument('specfile', metavar='FILE', default='spec.py')
     p.add_argument('--inventory', '-i', default='inventory.yaml')
+    p.add_argument('--dry-run', '-n', default=False, action='store_true')
 
     return p.parse_args()
 
@@ -35,7 +36,7 @@ if __name__ == '__main__':
     spec = load_spec(opts.specfile)
     nodes = mk_nodes(opts.provider, mk_namespace(spec))
 
-    main(opts.provider, nodes)
+    main(opts.provider, nodes, dry_run=opts.dry_run)
 
     # TODO: write_inventory(opts.inventory, mod.inventory, nodes)
     

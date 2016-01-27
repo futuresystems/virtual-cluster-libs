@@ -57,7 +57,7 @@ def wait_until(expr, sleep_time=1, max_time=60):
 
 
 
-def boot(nodes, **kws):
+def boot(nodes, dry_run=False, **kws):
 
     nova = get_client()
 
@@ -69,6 +69,8 @@ def boot(nodes, **kws):
         key_name = node.key_name
         net_name = node.network
         sec_groups = node.security_groups
+
+        if dry_run: continue
 
         ################################################## upload key if needed
 
