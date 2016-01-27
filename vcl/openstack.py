@@ -53,7 +53,7 @@ def wait_until(expr, sleep_time=1, max_time=30):
         time.sleep(sleep_time)
         slept += sleep_time
         if slept >= max_time:
-            break
+            raise RuntimeError, 'Timeout while waiting for {}'.format(expr)
 
 
 
