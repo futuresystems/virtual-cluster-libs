@@ -46,7 +46,7 @@ def find_by_query(objects, ident, query='name'):
     return objects[0]
 
 
-def wait_until(expr, sleep_time=1, max_time=30):
+def wait_until(expr, sleep_time=1, max_time=60):
     import time
     slept = 0
     while not expr():

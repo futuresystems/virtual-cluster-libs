@@ -1,4 +1,6 @@
 
+import os
+
 defaults = {
     'netmask': '255.255.0.0',
     'public_key': '~/.ssh/id_rsa.pub',
@@ -10,17 +12,15 @@ defaults = {
         'memory': 1024
     },
 
-    'openstack_futuresystems': {
+    'openstack': {
         'flavor': 'm1.large',
-        'image': 'ubuntu-14.04',
+        'image': 'Ubuntu-14.04-64',
         'key_name': 'gambit',
-        'network': 'fgXYZ-net',
-        'assign_floating_ip': False, 
+        'network': '{}-net'.format(os.getenv('OS_PROJECT_NAME')),
+        'create_floating_ip': False, 
         'floating_ip_pool': 'ext-net',
         'security_groups': ['default'],
     },
-
-    'openstack_cloud': 'openstack_futuresystems',
 
     'vagrant': {
         'provider': 'libvirt',
@@ -38,7 +38,7 @@ zk = lambda i: {
 master = lambda i: {
     'master%d' % i: {
         'ip': '10.0.1.{}'.format(i+10),
-        'openstack/futuresystems': {'security_groups': ['default', 'hadoop-status']}
+        'openstack': {'security_groups': ['default', 'hadoop-status']}
     }
 }
 
@@ -51,15 +51,16 @@ slave = lambda i: {
 frontend = lambda i: {
     'frontend%d' % i: {
         'ip': '10.0.3.{}'.format(i+10),
-        'extra_disks': {'vdb': {'size': '10G'}}
+        'extra_disks': {'vdb': {'size': '10G'}},
+        'openstack': {'create_floating_ip': True},
     }
 }
 
 loadbalancer = lambda i: {
     'loadbalancer%d' % i: {
         'ip': '10.0.4.{}'.format(i+10),
-        'openstack_futuresystems': {'flavor': 'm1.medium',
-                                    'security_groups': ['default', 'sshlb'],}
+        'openstack': {'flavor': 'm1.medium',
+                      'security_groups': ['default', 'sshlb'],}
 
     }
 }
@@ -73,7 +74,7 @@ monitor = lambda i: {
 gluster = lambda i: {
     'gluster%d' % i: {
         'ip': '10.0.6.{}'.format(i+10),
-        'openstack/futuresystems': {'flavor': 'm1.large',}
+        'openstack': {'flavor': 'm1.large',}
 
     }
 }
@@ -170,7 +171,7 @@ spec = {
 }
 
 # from vcl.specification import mk_specification
-# print mk_specification(spec).defaults.openstack.futuresystems.image
+# print mk_specification(spec).defaults.openstack.image
 
 
 # import yaml

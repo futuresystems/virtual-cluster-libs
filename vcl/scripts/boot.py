@@ -1,13 +1,11 @@
 
 
-from vcl.specification import mk_namespace, mk_nodes
+from vcl.specification import mk_namespace, mk_nodes, load_spec
 from vcl import openstack
 # from vcl.boot import libvirt
 
-import yaml
 import argparse as A
-import imp
-import uuid
+
 
 __PROVIDERS = dict(
     openstack = openstack,
@@ -34,10 +32,8 @@ def main(provider, nodes, *args, **kws):
 if __name__ == '__main__':
     opts = getopts()
 
-    modname = 'module_' + uuid.uuid1().hex
-    moddesc = ('.py', 'r', imp.PY_SOURCE) # FIXME: .py
-    mod = imp.load_module(modname, open(opts.specfile), opts.specfile, moddesc)
-    nodes = mk_nodes(opts.provider, mk_namespace(mod.spec))
+    spec = load_spec(opts.specfile)
+    nodes = mk_nodes(opts.provider, mk_namespace(spec))
 
     main(opts.provider, nodes)
 

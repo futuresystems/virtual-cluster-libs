@@ -3,6 +3,8 @@ import traits.api as T
 from traits.api import HasTraits, TraitHandler
 import argparse
 from itertools import chain
+import imp
+import uuid
 
 class NamespaceTraitHandler(TraitHandler):
 
@@ -68,11 +70,7 @@ def mk_node_class(provider, spec):
         clazz = LibvirtNode
 
     elif provider == 'openstack':
-        try:
-            cloudname = spec.defaults.openstack_cloud
-            parms = getattr(spec.defaults, cloudname)
-        except AttributeError:
-            parms = spec.defaults.openstack
+        parms = spec.defaults.openstack
 
         class OpenstackNode(Node):
             flavor = T.String(parms.flavor)
@@ -188,3 +186,18 @@ def combine(name, *groups):
                     yield n
 
     return {name: list(sorted(set(work())))}
+
+
+def load_spec(path):
+    
+    modname = 'module_' + uuid.uuid1().hex
+    moddesc = ('.py', 'r', imp.PY_SOURCE) # FIXME: .py
+    mod = imp.load_module(modname, open(path), path, moddesc)
+    return mod.spec
+
+
+if __name__ == '__main__':
+    import sys
+    path = sys.argv[1]
+    spec = load_spec(path)
+    print spec
