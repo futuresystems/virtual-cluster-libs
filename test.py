@@ -27,9 +27,11 @@ defaults = {
     'vagrant': {
         'provider': 'libvirt',
         'box': 'ubuntu/14.04'
-    }
+    },
+
+    'provider': 'openstack',
 }
-                  
+
 
 zk = lambda i: {
     'zk%d' % i: {

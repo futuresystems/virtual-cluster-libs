@@ -45,7 +45,7 @@ class IPv4TraitHandler(TraitHandler):
 TIPv4 = T.Trait(IPv4TraitHandler())
 
 
-def mk_node_class(provider, spec):
+def mk_node_class(spec, provider=None):
     """str -> Namespace -> type
 
     Construct the Node type with default values provided in the
@@ -63,6 +63,8 @@ def mk_node_class(provider, spec):
         domain_name = T.String(spec.defaults.domain_name)
         extra_disks = T.Dict(vars(spec.defaults.extra_disks))
     clazz = Node
+
+    provider = provider or spec.defaults.provider
 
     if provider == 'libvirt':
         class LibvirtNode(Node):
@@ -96,14 +98,14 @@ def mk_node_class(provider, spec):
     return clazz
 
 
-def mk_nodes(provider, spec):
-    """str -> Namespace -> [Node]
+def mk_nodes(spec, provider=None):
+    """str -> Namespace or None -> [Node]
     
     Construct the appropriate Node instances for a provider given a
     specification.
     """
 
-    clazz = mk_node_class(provider, spec)
+    clazz = mk_node_class(spec, provider=provider)
 
     def mk():
         for mach in spec.machines:
@@ -138,9 +140,7 @@ def update_spec(spec, nodes):
     Updates *in-place* `spec` with `nodes`
     """
 
-    lookup = {}
-    for n in nodes:
-        lookup[n.hostname] = n
+    lookup = dict([(n.hostname, n) for n in nodes])
     assert len(lookup) == len(nodes)
 
     assert len(spec.machines) == len(nodes)
@@ -245,7 +245,7 @@ def inventory_format(spec):
     # return yaml.dump(inv, default_flow_style=False)
 
 
-def load(path):
+def load_spec(path):
     
     modname = 'module_' + uuid.uuid1().hex
     moddesc = ('.py', 'r', imp.PY_SOURCE) # FIXME: .py
@@ -256,10 +256,10 @@ def load(path):
 if __name__ == '__main__':
     import sys
     path = sys.argv[1]
-    spec = load(path)
+    spec = load_spec(path)
     # print spec
     
-    nodes = mk_nodes('openstack', spec)
+    nodes = mk_nodes(spec, 'openstack')
     update_spec(spec, nodes)
 
     print inventory_format(spec)

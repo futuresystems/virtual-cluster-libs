@@ -1,6 +1,6 @@
 
 
-from vcl.specification import update_spec, mk_nodes, load, inventory_format
+from vcl.specification import update_spec, mk_nodes, load_spec, inventory_format
 from vcl import openstack
 import yaml
 # from vcl.boot import libvirt
@@ -16,17 +16,17 @@ __PROVIDERS = dict(
 
 def getopts():
 
-    from .defaults import \
+    from defaults import \
           spec_filename \
         , inventory_filename \
         , machines_filename
 
     p = A.ArgumentParser(description='Startup virtual machines')
-    p.add_argument('--provider', '-p', required=True)
-    p.add_argument('specfile', metavar='FILE', default=spec_filename)
-    p.add_argument('--inventory', '-i', default=inventory_filename)
+    p.add_argument('--provider', '-p', metavar='STR', default=None)
+    p.add_argument('--specfile', '-s', metavar='FILE', default=spec_filename)
+    p.add_argument('--inventory', '-i', metavar='FILE', default=inventory_filename)
     p.add_argument('--dry-run', '-n', default=False, action='store_true')
-    p.add_argument('--machines', '-m', default=machines_filename)
+    p.add_argument('--machines', '-m', metavar='FILE', default=machines_filename)
 
     return p.parse_args()
 
@@ -34,11 +34,13 @@ def getopts():
 def main(opts):
     global __PROVIDERS
 
-    spec = load(opts.specfile)
-    nodes = mk_nodes(opts.provider, spec)
+    spec = load_spec(opts.specfile)
+    nodes = mk_nodes(spec, provider=opts.provider)
     update_spec(spec, nodes)
 
-    module = __PROVIDERS[opts.provider]
+    provider = opts.provider or spec.defaults.provider
+
+    module = __PROVIDERS[provider]
     machines = module.boot(nodes, dry_run=opts.dry_run)
 
     with open(opts.machines, 'w') as fd: fd.write('')

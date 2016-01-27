@@ -22,6 +22,8 @@ defaults = {
         'security_groups': ['default'],
     },
 
+    'provider': 'openstack',
+
 }
 
 vcl = lambda i: {
