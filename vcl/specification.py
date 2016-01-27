@@ -1,4 +1,5 @@
 
+import yaml
 import traits.api as T
 from traits.api import HasTraits, TraitHandler
 import argparse
@@ -62,6 +63,34 @@ def mk_node_class(spec, provider=None):
         private_key = T.File(spec.defaults.private_key)
         domain_name = T.String(spec.defaults.domain_name)
         extra_disks = T.Dict(vars(spec.defaults.extra_disks))
+
+
+        def to_simple_types(self):
+
+            def simpletype(val):
+                if isinstance(val, list):
+                    return map(simpletype, val)
+                elif isinstance(val, dict):
+                    r = {}
+                    for k, v in val.iteritems():
+                        r[k] = simpletype(v)
+                elif isinstance(val, unicode):
+                    return str(val)
+                elif isinstance(val, int) \
+                     or isinstance(val, float) \
+                     or isinstance(val, bool) \
+                     or isinstance(val, str):
+                    return val
+                else:
+                    raise ValueError, 'Unable to simplify {} {}'.format(val, type(val))
+
+            fields = {}
+            for k, v in self.get().iteritems():
+                fields[k] = simpletype(v)
+
+            return fields
+
+
     clazz = Node
 
     provider = provider or spec.defaults.provider
@@ -253,6 +282,11 @@ def load_spec(path):
     return mk_namespace(mod.spec)
 
 
+def load_machines(path):
+    d = yaml.load(open(path).read())
+    return mk_namespace(d)
+    
+
 if __name__ == '__main__':
     import sys
     path = sys.argv[1]
@@ -262,4 +296,4 @@ if __name__ == '__main__':
     nodes = mk_nodes(spec, 'openstack')
     update_spec(spec, nodes)
 
-    print inventory_format(spec)
+    print load_machines('.machines.yml')

@@ -47,9 +47,8 @@ def main(opts):
 
     for m in machines:
         with open(opts.machines, 'a') as fd:
-            o = {m.hostname: m}
-            s = yaml.dump(o, default_flow_style=False,
-                          canonical=False, default_style='')
+            o = {m.hostname: m.to_simple_types()}
+            s = yaml.dump(o, default_flow_style=False)
             fd.write(s)
 
     with open(opts.inventory, 'w') as fd:
