@@ -81,7 +81,8 @@ def mk_node_class(spec, provider=None):
                 elif isinstance(val, int) \
                      or isinstance(val, float) \
                      or isinstance(val, bool) \
-                     or isinstance(val, str):
+                     or isinstance(val, str) \
+                     or isinstance(val, None.__class__):
                     return val
                 else:
                     raise ValueError, 'Unable to simplify {} {}'.format(val, type(val))
