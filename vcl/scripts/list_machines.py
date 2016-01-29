@@ -1,30 +1,25 @@
+"""
+List running VMs
+"""
 
 from __future__ import absolute_import
 
-from vcl.specification import load_spec
-from argparse import ArgumentParser
+from vcl.specification import load_machines
 
 
+def add_parser(p):
 
-def getopts():
+    from .defaults import machines_filename
 
-    from defaults import spec_filename
+    p.add_argument('--machines', '-m', metavar='FILE',
+                   default=machines_filename,
+                   help='Path to the machines file')
 
-    p = ArgumentParser()
-    p.add_argument('specfile', metavar='FILE', default=spec_filename)
-
-    return p.parse_args()
 
 
 def main(opts):
 
-    spec = load_spec(opts.specfile)
+    machines = load_machines(opts.machines)
 
-    for machine in spec.machines:
-        assert len(machine) == 1
-        hostname = machine.keys()[0]
+    for hostname in machines:
         print hostname
-
-
-if __name__ == '__main__':
-    main(getopts())

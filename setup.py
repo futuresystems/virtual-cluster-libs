@@ -9,5 +9,8 @@ setup(
     name='virtual-cluster-libs',
     version=VERSION,
     packages=find_packages(),
+    entry_points={'console_scripts': [
+        'vcl = vcl.__main__:main',
+    ]},
     license='Apache 2.0',
 )

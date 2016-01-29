@@ -1,11 +1,13 @@
+"""
+Boot virtual machines
+"""
 
+from __future__ import absolute_import
 
 from vcl.specification import update_spec, mk_nodes, load_spec, inventory_format
 from vcl import openstack
 import yaml
 # from vcl.boot import libvirt
-
-import argparse as A
 
 
 __PROVIDERS = dict(
@@ -14,21 +16,24 @@ __PROVIDERS = dict(
 )
 
 
-def getopts():
+def add_parser(p):
 
-    from defaults import \
+    from .defaults import \
           spec_filename \
         , inventory_filename \
         , machines_filename
 
-    p = A.ArgumentParser(description='Startup virtual machines')
-    p.add_argument('--provider', '-p', metavar='STR', default=None)
-    p.add_argument('--specfile', '-s', metavar='FILE', default=spec_filename)
-    p.add_argument('--inventory', '-i', metavar='FILE', default=inventory_filename)
-    p.add_argument('--dry-run', '-n', default=False, action='store_true')
-    p.add_argument('--machines', '-m', metavar='FILE', default=machines_filename)
-
-    return p.parse_args()
+    p.add_argument('--provider', '-p', metavar='STR', default=None,
+                   help='The VM provider')
+    p.add_argument('--specfile', '-s', metavar='FILE',
+                   default=spec_filename, help='The cluster specification file')
+    p.add_argument('--inventory', '-i', metavar='FILE',
+                   default=inventory_filename,
+                   help='The inventory file to write')
+    p.add_argument('--dry-run', '-n', default=False, action='store_true',
+                   help='Don\'t actually do anything')
+    p.add_argument('--machines', '-m', metavar='FILE', default=machines_filename,
+                   help='The machine file to write')
 
 
 def main(opts):

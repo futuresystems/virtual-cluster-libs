@@ -1,22 +1,27 @@
+"""
+Ssh into a machines
+"""
+
+from __future__ import absolute_import
 
 from vcl.specification import load_machines
 
-def getopts():
+def add_parser(p):
 
-    from defaults import machines_filename
-    from argparse import ArgumentParser
+    from .defaults import machines_filename
 
-    p = ArgumentParser()
-    p.add_argument('--machines', '-m', default=machines_filename)
-    p.add_argument('hostname', metavar='HOST')
-    p.add_argument('arguments', metavar='ARG', nargs='*')
+    p.add_argument('--machines', '-m', default=machines_filename,
+                   help='Path to the machine definitions file')
+    p.add_argument('hostname', metavar='HOST', help='Hostname to login to')
+    p.add_argument('arguments', metavar='ARG', nargs='*',
+                   help='Any other arguments to the "ssh" executable')
 
-    return p.parse_args()
 
 
 def ssh(hostname, machines, args):
 
-    from subprocess import check_output
+    from subprocess import call
+    import sys
     from pipes import quote
 
     ip = machines[hostname].ip
@@ -28,10 +33,9 @@ def ssh(hostname, machines, args):
     ] + args
 
     print ' '.join(map(quote, cmd))
-    print check_output(cmd)
+    call(cmd, stderr=sys.stderr, stdout=sys.stdout)
 
 
-if __name__ == '__main__':
-    opts = getopts()
+def main(opts):
     machines = load_machines(opts.machines)
     ssh(opts.hostname, machines, opts.arguments)
