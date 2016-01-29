@@ -56,7 +56,7 @@ frontend = lambda i: {
     'frontend%d' % i: {
         'ip': '10.0.3.{}'.format(i+10),
         'extra_disks': {'vdb': {'size': '10G'}},
-        'openstack': {'create_floating_ip': True},
+        # 'openstack': {'create_floating_ip': True},
     }
 }
 
