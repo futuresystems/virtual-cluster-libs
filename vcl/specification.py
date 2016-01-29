@@ -7,10 +7,12 @@ from itertools import chain
 import imp
 import uuid
 
+from easydict import EasyDict
+
 class NamespaceTraitHandler(TraitHandler):
 
     def validate(self, object, name, value):
-        if isinstance(value, argparse.Namespace):
+        if isinstance(value, EasyDict):
             return value
         else:
             self.error(object, name, value)
@@ -205,7 +207,7 @@ def mk_namespace(spec_dict):
             v = obj[k]
             if isinstance(v, dict):
                 obj[k] = mk(obj[k])
-        return argparse.Namespace(**obj)
+        return EasyDict(**obj)
 
     return mk(spec_dict)
 
