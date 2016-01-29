@@ -1,7 +1,7 @@
 
 from __future__ import absolute_import
 
-from vcl.specification import load, update_spec
+from vcl.specification import load_spec
 from argparse import ArgumentParser
 
 
@@ -18,7 +18,7 @@ def getopts():
 
 def main(opts):
 
-    spec = load(opts.specfile)
+    spec = load_spec(opts.specfile)
 
     for machine in spec.machines:
         assert len(machine) == 1
