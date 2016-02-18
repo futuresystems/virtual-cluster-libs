@@ -57,12 +57,13 @@ def wait_until(expr, sleep_time=1, max_time=60):
 
 
 
-def boot(nodes, dry_run=False, **kws):
+def boot(nodes, prefix='', dry_run=False, **kws):
 
     nova = get_client()
 
     for node in nodes:
-        print node.hostname
+        node_name = prefix + node.hostname
+        print node.hostname, '->', node_name
 
         image_name = node.image
         flavor_name = node.flavor
@@ -91,13 +92,13 @@ def boot(nodes, dry_run=False, **kws):
         ################################################## boot
 
         try:
-            nova.servers.find(name=node.hostname)
+            nova.servers.find(name=node_name)
             print 'Already booted'
             continue
         except novaclient.exceptions.NotFound:
 
             vm = nova.servers.create(
-                node.hostname,
+                node_name,
                 image,
                 flavor,
                 key_name=key_name,

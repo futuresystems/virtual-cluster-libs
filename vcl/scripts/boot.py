@@ -34,6 +34,8 @@ def add_parser(p):
                    help='Don\'t actually do anything')
     p.add_argument('--machines', '-m', metavar='FILE', default=machines_filename,
                    help='The machine file to write')
+    p.add_argument('--prefix', '-P', metavar='STR', default='',
+                   help='Prefix the name (not hostname) with this string')
 
 
 def main(opts):
@@ -46,7 +48,7 @@ def main(opts):
     provider = opts.provider or spec.defaults.provider
 
     module = __PROVIDERS[provider]
-    machines = module.boot(nodes, dry_run=opts.dry_run)
+    machines = module.boot(nodes, prefix=opts.prefix, dry_run=opts.dry_run)
 
     with open(opts.machines, 'w') as fd: fd.write('')
 
