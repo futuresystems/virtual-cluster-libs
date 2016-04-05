@@ -12,20 +12,33 @@ warnings.simplefilter('ignore')
 
 
 def get_client():
-    from keystoneclient.auth.identity.v3 import Password
     from keystoneclient.session import Session
     from novaclient.client import Client
     from os import getenv as ge
+    from keystoneclient.auth.identity import Password
 
-    auth = Password(
-        auth_url=ge('OS_AUTH_URL'),
-        username=ge('OS_USERNAME'),
-        password=ge('OS_PASSWORD'),
-        user_domain_id=ge('OS_USER_DOMAIN_ID', 'default'),
-        project_domain_id=ge('OS_PROJECT_DOMAIN_ID', 'default'),
-        project_name=ge('OS_PROJECT_NAME', ge('OS_TENANT_NAME')),
-    )
-    
+
+    OS_AUTH_URL = ge('OS_AUTH_URL')
+
+    if OS_AUTH_URL.endswith('v2.0'):
+        auth = Password(
+            ge('OS_AUTH_URL'),
+            username=ge('OS_USERNAME'),
+            password=ge('OS_PASSWORD'),
+            tenant_name=ge('OS_TENANT_NAME')
+        )
+    elif OS_AUTH_URL.endswith('v3'):
+        auth = Password(
+            ge('OS_AUTH_URL'),
+            username=ge('OS_USERNAME'),
+            password=ge('OS_PASSWORD'),
+            user_domain_id=ge('OS_USER_DOMAIN_ID', 'default'),
+            project_domain_id=ge('OS_PROJECT_DOMAIN_ID', 'default'),
+        )
+    else:
+        raise ValueError('Unable to discover version from {}'.format(OS_AUTH_URL))
+
+
     session = Session(
         auth=auth,
         verify=ge('OS_CACERT'),
