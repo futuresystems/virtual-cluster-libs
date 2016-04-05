@@ -1,0 +1,6 @@
+python-openstackclient
+python-novaclient
+pyyaml
+traits
+easydict
+-e git://github.com/badi/pxul@v2.0.0#egg=pxul
