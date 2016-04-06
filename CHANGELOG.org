@@ -1,0 +1,6 @@
+
+* v0.2.0
+  - =vcl ssh= uses floating ip if available
+  - set ansible_ssh_host to floating ip if a node has a floating ip
+  - support keystone v2 and v3 password authentication
+  - default requirements.txt uses frozen dependencies
