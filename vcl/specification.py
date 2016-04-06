@@ -260,9 +260,11 @@ def inventory_format(spec):
             sio.writeln('[{}]'.format(name))
 
             for node in nodes:
+                ip = node.floating_ip or node.ip
+
                 sio.write('{host} ansible_ssh_host={ip}'\
                           .format(host = node.hostname,
-                                  ip   = node.ip))
+                                  ip   = ip))
 
                 sio.write(' ansible_ssh_private_key={}'\
                           .format(fullpath(node.private_key)))

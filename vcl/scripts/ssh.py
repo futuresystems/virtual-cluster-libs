@@ -24,7 +24,11 @@ def ssh(hostname, machines, args):
     import sys
     from pipes import quote
 
-    ip = machines[hostname].ip
+    node = machines[hostname]
+    if hasattr(node, 'floating_ip'):
+        ip = node.floating_ip
+    else:
+        ip = node.ip
 
     cmd = ['ssh',
            '-o', 'UserKnownHostsFile=/dev/null',
