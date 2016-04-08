@@ -34,6 +34,7 @@ def get_client():
             password=ge('OS_PASSWORD'),
             user_domain_id=ge('OS_USER_DOMAIN_ID', 'default'),
             project_domain_id=ge('OS_PROJECT_DOMAIN_ID', 'default'),
+            project_name=ge('OS_PROJECT_NAME'),
         )
     else:
         raise ValueError('Unable to discover version from {}'.format(OS_AUTH_URL))
