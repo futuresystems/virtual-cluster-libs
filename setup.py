@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 from setup_util import write_version_module
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 write_version_module(VERSION, 'vcl/version.py')
 
