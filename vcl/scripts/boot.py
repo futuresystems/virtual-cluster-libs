@@ -36,6 +36,8 @@ def add_parser(p):
                    help='The machine file to write')
     p.add_argument('--prefix', '-P', metavar='STR', default='',
                    help='Prefix the name (not hostname) with this string')
+    p.add_argument('--wait-until-active-timeout', '-w', type=int, default=60,
+                   help='Wait at most this number of seconds for a node to become active before giving up.')
 
 
 def main(opts):
@@ -48,7 +50,9 @@ def main(opts):
     provider = opts.provider or spec.defaults.provider
 
     module = __PROVIDERS[provider]
-    machines = module.boot(nodes, prefix=opts.prefix, dry_run=opts.dry_run)
+    machines = module.boot(nodes, prefix=opts.prefix, dry_run=opts.dry_run,
+                           wait_until_active_timeout=opts.wait_until_active_timeout,
+                           )
 
     with open(opts.machines, 'w') as fd: fd.write('')
 

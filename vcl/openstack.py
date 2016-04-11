@@ -71,7 +71,9 @@ def wait_until(expr, sleep_time=1, max_time=60):
 
 
 
-def boot(nodes, prefix='', dry_run=False, **kws):
+def boot(nodes, prefix='', dry_run=False,
+         wait_until_active_timeout=60,
+         ):
 
     nova = get_client()
 
@@ -123,7 +125,7 @@ def boot(nodes, prefix='', dry_run=False, **kws):
             instance = nova.servers.get(vm.id)
             return instance.status == 'ACTIVE'
 
-        wait_until(is_active)
+        wait_until(is_active, max_time=wait_until_active_timeout)
 
 
         ################################################## security groups
