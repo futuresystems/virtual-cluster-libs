@@ -25,7 +25,7 @@ def ssh(hostname, machines, args):
     from pipes import quote
 
     node = machines[hostname]
-    if hasattr(node, 'floating_ip'):
+    if hasattr(node, 'floating_ip') and node.floating_ip is not None:
         ip = node.floating_ip
     else:
         ip = node.ip

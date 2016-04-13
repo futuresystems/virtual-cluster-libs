@@ -1,4 +1,7 @@
 
+* v0.2.2
+  [2016-04-13 Wed]
+  - adds a check if a floating ip was used before trying to use it ([[https://github.com/futuresystems/virtual-cluster-libs/issues/4][fixes #4]])
 * v0.2.1
   - authenticate with =OS_PROJECT_NAME= (fixes #3)
 
@@ -7,3 +10,11 @@
   - set ansible_ssh_host to floating ip if a node has a floating ip
   - support keystone v2 and v3 password authentication
   - default requirements.txt uses frozen dependencies
+* v0.1.0
+  [2016-01-29]
+
+  The =vcl= command knows of three subcommands:
+
+  - =boot=: boot some machines from a =.cluster.py= specification
+  - =list=: list machines in the output =.machines.yml=
+  - =ssh=: ssh into a machine by name in =.machines.yml=
