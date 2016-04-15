@@ -36,7 +36,7 @@ def add_parser(p):
                    help='The machine file to write')
     p.add_argument('--prefix', '-P', metavar='STR', default='',
                    help='Prefix the name (not hostname) with this string')
-    p.add_argument('--wait-until-active-timeout', '-a', default=60, type=int,
+    p.add_argument('--wait-until-active-timeout', '-a', default=360, type=int,
                    help='Number of seconds to wait for a node to become ACTIVE before giving up')
     p.add_argument('--wait-until-active-poll', '-A', default=1, type=int,
                    help='Number of seconds to wait between polling a new instance to see if it is ACTIVE')
