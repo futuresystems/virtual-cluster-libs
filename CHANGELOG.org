@@ -1,4 +1,9 @@
 
+* v0.2.3
+  [2016-04-15 Fri]
+  - be more verbose, describe what is happening while booting each instance
+  - expose timeout knobs
+
 * v0.2.2
   [2016-04-13 Wed]
   - adds a check if a floating ip was used before trying to use it ([[https://github.com/futuresystems/virtual-cluster-libs/issues/4][fixes #4]])
