@@ -1,5 +1,10 @@
 
+import parser
+
 import random
+import copy
+from functools import partial
+import collections
 
 import traits.api as T
 from traits.api import HasTraits
@@ -29,8 +34,7 @@ class Service(HasTraits):
         machine.services.add(self)
 
 
-# internal use only
-class _ServiceGroup(HasTraits):
+class ServiceGroup(HasTraits):
 
     uuid = T.UUID()
     services = T.Dict(T.String, Service)
@@ -40,6 +44,15 @@ class _ServiceGroup(HasTraits):
 
     def __setitem__(self, k, v):
         self.services[k] = v
+
+    def __getattr__(self, attr):
+        return self.services[attr]
+
+    def __len__(self):
+        return len(self.services)
+
+    def __iter__(self):
+        return iter(self.services)
 
 
 class Machine(HasTraits):
@@ -95,7 +108,14 @@ class _MachineCollection(HasTraits):
 class AnsibleVars(HasTraits):
 
     kind = T.Trait(None, 'host_vars', 'group_vars')
-    vars = T.Dict()
+    vars = T.Dict() # dict string (dict string (dict string string))
+
+    # def materialize(self, cwd=None):
+    #     cwd = cwd or os.getcwd()
+    #     prefix = os.path.join(cwd, self.kind)
+    #     pxul.os.ensure_dir(prefix)
+
+    #     for service_name in self.vars['services']
 
 
 ##################################################
@@ -105,22 +125,36 @@ class Cluster(HasTraits):
     uuid = T.UUID()
     provider = T.Trait(Provider)
     machines = T.Dict(T.String(), T.Trait(Machine))  # name -> Machine
-    services = T.Dict(T.String(), T.Trait(Service))  # name -> Service
+    services = T.Trait(ServiceGroup)
     vars = T.List(T.Trait(AnsibleVars))
 
+    # @classmethod
+    # def load_yaml(cls, yaml_string, expand=True):
+
+
+        # visitor = parser.Visitor(
+        #     handlers = [parser.env_handler,
+        #                 parser.index_handler],
+        #     context  = cluster,
+        # )
+        # d2 = visit(d)
+
+        # return cluster
+
+
+class ClusterLoader(object):
 
     @classmethod
-    def load_yaml(cls, path):
+    def phase1(cls, yaml_string):
 
-        with open(path) as fd:
-            d = yaml.load(fd)
-            d = EasyDict(d)
+        d = yaml.load(yaml_string)
+        d = EasyDict(d)
 
         services = _load_services(d.services)
         machines = _load_machines(d.machines, services)
         hostvars = _load_host_vars(d.host_vars)
 
-        cluster  = cls(
+        cluster  = Cluster(
             machines = dict([(m.name, m) for m in machines]),
             services = services,
             vars = [hostvars],
@@ -128,11 +162,85 @@ class Cluster(HasTraits):
 
         return cluster
 
+    
+    @classmethod
+    def phase2(cls, yaml_string, cluster):
+
+        spec_dict = yaml.load(yaml_string)
+
+        visitor = SpecificationVisitor(
+            handlers = [parser.env_handler,
+                        partial(parser.index_handler, cluster)],
+        )
+        
+        transformed = visitor.transform(spec_dict)
+        new_yaml_str = yaml.dump(transformed)
+        return cls.phase1(new_yaml_str)
+
+
+    @classmethod
+    def load_yaml(cls, yaml_string):
+        cluster = cls.phase1(yaml_string)
+        cluster = cls.phase2(yaml_string, cluster)
+        return cluster
+
+
+class SpecificationVisitor(HasTraits):
+
+    handlers = T.List()
+
+
+    def transform(self, spec):
+        self.spec = copy.deepcopy(spec)
+        return self.visit(self.spec)
+
+
+    def visit_generic(self, node):
+        return node
+
+
+    def visit(self, node):
+        typ  = type(node).__name__
+        attr = 'visit_{}'.format(typ)
+        visitor = getattr(self, attr, self.visit_generic)
+        return visitor(node)
+
+
+    def visit_dict(self, node):
+        inherit = '<inherit>'
+        if inherit in node:
+            name = node[inherit]
+            path = name.split('.')
+            new  = self.spec
+            for key in path:
+                new = new[key]
+            del node['<inherit>']
+            for k,v in node.iteritems():
+                new[k] = v
+            node = new
+
+        for k in node.keys():
+            node[k] = self.visit(node[k])
+
+        return node
+
+
+    def visit_list(self, node):
+        for i in xrange(len(node)):
+            node[i] = self.visit(node[i])
+        return node
+
+
+    def visit_str(self, node):
+        print node
+        return parser.transform(parser.expansion, self.handlers, node)
+
+
 ##################################################
 
 
 def _load_services(root):
-    group = _ServiceGroup()
+    group = ServiceGroup()
 
     for service_name in root:
         group[service_name] = Service(name=service_name)
@@ -146,7 +254,7 @@ def _load_services(root):
                 parent = group[parent_name]
                 service.parents.add(parent)
 
-    return group.services
+    return group
 
 
 
@@ -164,7 +272,7 @@ def _load_machines(root, services):
             collection.append(Machine(name='{}{:02d}'.format(machine_name,i)))
 
         ### assignments
-        assignments = root[machine_name].get('for', [])
+        assignments = root[machine_name].get('services', [])
         for service_name in assignments:
             service = services[service_name]
 
@@ -186,5 +294,5 @@ def _load_host_vars(root):
 
 
 def test(path):
-    c = Cluster.load_yaml(path)
+    c = ClusterLoader.load_yaml(open(path).read())
     return c

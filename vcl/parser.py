@@ -1,6 +1,8 @@
 
-from pyparsing import CaselessLiteral, Literal, Optional, Word
-from string import digits, letters, punctuation
+from pyparsing import CaselessLiteral, Literal, Optional, Word,\
+    pyparsing_common
+from string import ascii_letters,  digits, letters, punctuation
+import copy
 
 
 """
@@ -25,7 +27,7 @@ start = Literal('<<')
 end = Literal('>>')
 delim = Literal(':')
 
-symbol = Word(letters, letters + digits + '.')\
+symbol = Word(letters, letters + digits + '_.')\
          .setResultsName('symbol')
 
 env_var_name = Word(env_var_name_alphabet_init,
@@ -49,11 +51,44 @@ index = index_directive + delim + symbol + delim + index_value
 expansion = start + (env ^ index) + end
 
 ################################################################################
+## handlers
+################################################################################
+
+def env_handler(token):
+    import os
+    var = token.env
+    return os.getenv(var)
+
+
+def index_handler(scope, token):
+    print 'hello'
+    return 'FOOBAR'
+    # namespace = token.symbol.split('.')
+    # obj = scope
+    # for attr in namespace:
+    #     obj = getattr(obj, attr)
+
+    # assert isinstance(obj, Sequence)
+    # for i, x in enumerate(obj, token.index):
+    #     yield i
+
+
+
+def transform(parser, actions, string):
+    if '<<env:OS_PROJECT_NAME>>-net' in string:
+        import pdb; pdb.set_trace()
+    
+    parser_copy = copy.copy(parser)
+    parser_copy.addParseAction(*actions)
+    return parser_copy.transformString(string)
+
+
+################################################################################
 ## tests
 ################################################################################
 
 from hypothesis import given, example, assume
-from hypothesis.strategies import text, composite, one_of, sampled_from, integers
+from hypothesis.strategies import text, composite, one_of, sampled_from, integers, binary, fractions, decimals, floats, booleans, lists, tuples
 from pyparsing import ParseException
 
 
@@ -117,11 +152,19 @@ def test_env(val):
 
 
 @composite
+def variable_name(draw):
+    start = draw(text(letters+'_', min_size=1))
+    rest = draw(text(letters+digits+'_'))
+    return start + rest
+
+
+@composite
 def index_strategy(draw):
     directive = draw(sampled_from('index Index INdex INDex INDEx INDEX'.split()))
-    symbol_start = draw(text(alphabet=letters, min_size=1))
-    symbol_rest  = draw(text(alphabet=letters+digits+'.'))
-    symbol = symbol_start + symbol_rest
+
+    symbols = draw(lists(variable_name(), min_size=1))
+    symbol = '.'.join(symbols)
+
     index = draw(integers(min_value=0))
     r = '{}:{}:{}'.format(directive, symbol, index)
     return r, (symbol, index)
@@ -154,12 +197,53 @@ def test_expansion(val):
         assert r['env'] == expected
     elif r['directive'] == 'index':
         assert 'index' in r.keys()
-        assert r['index'] == expected
+        assert 'symbol' in r.keys()
+        assert r.symbol == expected[0]
+        assert r.index == expected[1]
     else:
         raise ValueError('Unknown directive {}'.format(r['directive']))
 
 
-        
+@composite
+def index_object(draw):
+    string, (symbol, value) = draw(index_strategy())
+
+    class dummy(object):
+        pass
+
+    fields = symbol.split('.')
+    start = dummy()
+    obj = start
+
+    for f in fields[:-1]:
+        new = dummy()
+        setattr(obj, f, new)
+        obj = new
+    setattr(obj, fields[-1], value)
+
+    return dict(object=start,
+                string=string,
+                symbol=symbol,
+                value=value,)
+
+
+@given(index_object())
+def test_transform(datum):
+    object = datum['object']
+    string = datum['string']
+
+    from functools import partial
+    ih = partial(index_handler, object)
+
+    transform(expansion, [env_handler, ih], string
+
+    
+
+    # scope = datum['object']
+    # name = datum['name']
+    # value = datum['value']
+
+
 
 def run_tests():
     LiteralParserTesters().run()
