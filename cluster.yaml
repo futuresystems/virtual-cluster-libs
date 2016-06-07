@@ -52,7 +52,7 @@ services:
 machines:
   controller:
     count: 3
-    for:
+    services:
       zookeeper:
       namenode:
         assign: 2
@@ -68,7 +68,7 @@ machines:
       hadoop:
   datanode:
     count: 10
-    for:
+    services:
       datanode:
 
 
