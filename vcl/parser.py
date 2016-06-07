@@ -11,7 +11,9 @@ start := "<<"
 delim := ">>"
 env := "env" delim env_var_name [delim env_var_value]
 env_var_name := alphanumeric | "-" | "_" | "+"
-index := "index" delim integer
+
+symbol := alpha [alpha | digit | "."]
+enumerate := "enumerate" delim symbol_list delim integer
 """
 
 env_var_name_alphabet_init = letters
@@ -23,6 +25,8 @@ start = Literal('<<')
 end = Literal('>>')
 delim = Literal(':')
 
+symbol = Word(letters, letters + digits + '.')\
+         .setResultsName('symbol')
 
 env_var_name = Word(env_var_name_alphabet_init,
                     env_var_name_alphabet_rest)\
@@ -41,7 +45,7 @@ index_value = Word(digits)\
         .setResultsName('index')\
         .setParseAction(lambda s, loc, toks: int(toks['index']))
               
-index = index_directive + delim + index_value
+index = index_directive + delim + symbol + delim + index_value
 expansion = start + (env ^ index) + end
 
 ################################################################################
@@ -115,17 +119,23 @@ def test_env(val):
 @composite
 def index_strategy(draw):
     directive = draw(sampled_from('index Index INdex INDex INDEx INDEX'.split()))
+    symbol_start = draw(text(alphabet=letters, min_size=1))
+    symbol_rest  = draw(text(alphabet=letters+digits+'.'))
+    symbol = symbol_start + symbol_rest
     index = draw(integers(min_value=0))
-    r = '{}:{}'.format(directive, index)
-    return r, index
+    r = '{}:{}:{}'.format(directive, symbol, index)
+    return r, (symbol, index)
 
 
 @given(index_strategy())
+@example(('index:foo.bar:42',('foo.bar',42)))
 def test_index(val):
-    s, expected = val
+    s, (symbol, ix) = val
     r = index.parseString(s)
     assert 'index' in r.keys()
-    assert r['index'] == expected, (r['index'], expected)
+    assert 'symbol' in r.keys()
+    assert r.symbol == symbol, (r.symbol, symbol)
+    assert r.index == ix, (r.index, ix)
 
 
 @composite
