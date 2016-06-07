@@ -75,7 +75,7 @@ machines:
 host_vars:
   services:
     zookeeper:
-      zookeeper_id: <<INDEX:services.zookeeper.machines:1>>
+      zookeeper_id: <<index:services.zookeeper.machines:1>>
   machines:
     controller:
       foo: 
