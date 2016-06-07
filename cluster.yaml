@@ -1,0 +1,81 @@
+
+
+defaults:
+  auth:
+    public_key: ~/.ssh/id_rsa.pub
+    private_key: ~/.ssh/id_rsa
+  cloud:
+    openstack:
+      flavor: m1.small
+      key_name: <<env:HOSTNAME>>
+      network: <<env:OS_PROJECT_NAME>>-net
+      create_floating_ip: false
+      floating_ip_pool: ext-net
+      security_groups: ["default"]
+      available_security_groups:
+        default:
+          - port: 22
+            accept: 0.0.0.0/0
+            protocol: tcp
+          - protocol: icmp
+        web:
+          - port: 80,443,8080
+            accept: 0.0.0.0/0
+            protocol: tcp
+    futuresystems:
+      inherit: defaults.cloud.openstack
+      image: Ubuntu-14.04-64
+    chameleon:
+      inherit: defaults.cloud.openstack
+      image: CC-Ubuntu14.04
+
+
+services:
+  zookeeper:
+  namenode:
+    - hadoop
+  journalenode:
+    - hadoop
+  historyserver:
+    - hadoop
+  resourcemanager:
+    - hadoop
+  datanode:
+    - hadoop
+  hadoop:
+  frontend:
+  gluster:
+  loadbalancer:
+
+
+
+machines:
+  controller:
+    count: 3
+    for:
+      zookeeper:
+      namenode:
+        assign: 2
+      journalenode:
+        assign: 1
+      historyserver: 
+        assign: 1
+      resourcemanager: 
+        assign: 2
+      datanode:
+      frontend: 
+        assign: 1
+      hadoop:
+  datanode:
+    count: 10
+    for:
+      datanode:
+
+
+host_vars:
+  services:
+    zookeeper:
+      zookeeper_id: <<INDEX:services.zookeeper.machines:1>>
+  machines:
+    controller:
+      foo: 
