@@ -122,8 +122,12 @@ keyword = p.keyword
 ################################################################################
 
 def env_handler(tokens):
-    print 'Expanding', tokens.env
-    return os.getenv(tokens.env)
+    val = os.getenv(tokens.env)
+    print 'Expanding', tokens.env, '=>', val
+    if val is None:
+        print 'WARNING: no value for', tokens.env, ', skipping'
+    return val
+
 
 
 ################################################################################
