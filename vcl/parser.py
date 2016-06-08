@@ -27,8 +27,9 @@ start = Literal('<<')
 end = Literal('>>')
 delim = Literal(':')
 
-symbol = Word(letters, letters + digits + '_.')\
-         .setResultsName('symbol')
+symbol_alphabet = (letters, letters + digits + '_.')
+
+symbol = Word(*symbol_alphabet).setResultsName('symbol')
 
 env_var_name = Word(env_var_name_alphabet_init,
                     env_var_name_alphabet_rest)\
@@ -153,8 +154,10 @@ def test_env(val):
 
 @composite
 def variable_name(draw):
-    start = draw(text(letters+'_', min_size=1))
-    rest = draw(text(letters+digits+'_'))
+    start_alpha, rest_alpha = symbol_alphabet
+
+    start = draw(text(start_alpha, min_size=1))
+    rest  = draw(text(rest_alpha))
     return start + rest
 
 
