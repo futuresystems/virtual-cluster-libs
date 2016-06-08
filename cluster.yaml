@@ -73,9 +73,8 @@ machines:
 
 
 host_vars:
-  services:
-    zookeeper:
-      zookeeper_id: <<index:services.zookeeper.machines:1>>
-  machines:
-    controller:
-      foo: 
+  <<index:services.zookeeper.machines:1>>: zookeeper_id
+  <<forall:machines>>:
+    this_var_a: is the same for all machines
+  <<forall:machines.services.hadoop>>:
+    this_var_b: is defined (and identical) only the "hadoop" nodes
