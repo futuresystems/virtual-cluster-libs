@@ -153,7 +153,7 @@ def test_env(val):
 
 
 @composite
-def variable_name(draw):
+def symbols(draw):
     start_alpha, rest_alpha = symbol_alphabet
 
     start = draw(text(start_alpha, min_size=1))
@@ -165,8 +165,7 @@ def variable_name(draw):
 def index_strategy(draw):
     directive = draw(sampled_from('index Index INdex INDex INDEx INDEX'.split()))
 
-    symbols = draw(lists(variable_name(), min_size=1))
-    symbol = '.'.join(symbols)
+    symbol = '.'.join(draw(lists(symbols(), min_size=1)))
 
     index = draw(integers(min_value=0))
     r = '{}:{}:{}'.format(directive, symbol, index)
