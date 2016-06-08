@@ -149,7 +149,7 @@ class ClusterLoader(object):
     @classmethod
     def phase1(cls, yaml_string):
 
-        d = yaml.load(yaml_string)
+        d = yaml.safe_load(yaml_string)
         d = EasyDict(d)
 
         services = _load_services(d.services)
@@ -168,7 +168,7 @@ class ClusterLoader(object):
     @classmethod
     def phase2(cls, yaml_string, cluster):
 
-        spec_dict = yaml.load(yaml_string)
+        spec_dict = yaml.safe_load(yaml_string)
 
         visitor = SpecificationVisitor(
             handlers = [parser.env_handler],
