@@ -176,7 +176,7 @@ class ClusterLoader(object):
         )
         
         transformed = visitor.transform(spec_dict)
-        new_yaml_str = yaml.dump(transformed)
+        new_yaml_str = yaml.dump(transformed, default_flow_style=False)
         return cls.phase1(new_yaml_str)
 
 
