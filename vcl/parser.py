@@ -93,6 +93,50 @@ from hypothesis.strategies import text, composite, one_of, sampled_from, integer
 from pyparsing import ParseException
 
 
+################################################## strategies
+
+
+@composite
+def symbols(draw):
+    start_alpha, rest_alpha = symbol_alphabet
+
+    start = draw(text(start_alpha, min_size=1))
+    rest  = draw(text(rest_alpha))
+    return start + rest
+
+
+@composite
+def indices(draw): #  I couldn't bring myself to use 'indexes'
+    directive = draw(sampled_from('index Index INdex INDex INDEx INDEX'.split()))
+
+    symbol = '.'.join(draw(lists(symbols(), min_size=1)))
+
+    index = draw(integers(min_value=0))
+    r = '{}:{}:{}'.format(directive, symbol, index)
+    return r, (symbol, index)
+
+
+@composite
+def envs(draw):
+    directive = draw(sampled_from('env ENV eNv EnV eNV ENv'.split()))
+    name_start = draw(text(env_var_name_alphabet_init, min_size=1))
+    name_rest  = draw(text(env_var_name_alphabet_rest))
+    name = name_start + name_rest
+
+    result = '{}:{}'.format(directive, name)
+    return result, name
+
+
+@composite
+def expansions(draw):
+    elements = one_of(envs(), indices())
+    x, expected = draw(elements)
+    return '<<{}>>'.format(x), expected
+
+
+################################################## tests
+
+
 class LiteralParserTesters(object):
 
     def _test(self, literal, parser, example):
@@ -133,18 +177,7 @@ class LiteralParserTesters(object):
         self._test(':', delim, s)
 
 
-@composite
-def env_strategy(draw):
-    directive = draw(sampled_from('env ENV eNv EnV eNV ENv'.split()))
-    name_start = draw(text(env_var_name_alphabet_init, min_size=1))
-    name_rest  = draw(text(env_var_name_alphabet_rest))
-    name = name_start + name_rest
-
-    result = '{}:{}'.format(directive, name)
-    return result, name
-
-
-@given(env_strategy())
+@given(envs())
 def test_env(val):
     s, expected = val
     r = env.parseString(s)
@@ -152,27 +185,8 @@ def test_env(val):
     assert r['env'] == expected, (r['env'], expected)
 
 
-@composite
-def symbols(draw):
-    start_alpha, rest_alpha = symbol_alphabet
 
-    start = draw(text(start_alpha, min_size=1))
-    rest  = draw(text(rest_alpha))
-    return start + rest
-
-
-@composite
-def index_strategy(draw):
-    directive = draw(sampled_from('index Index INdex INDex INDEx INDEX'.split()))
-
-    symbol = '.'.join(draw(lists(symbols(), min_size=1)))
-
-    index = draw(integers(min_value=0))
-    r = '{}:{}:{}'.format(directive, symbol, index)
-    return r, (symbol, index)
-
-
-@given(index_strategy())
+@given(indices())
 @example(('index:foo.bar:42',('foo.bar',42)))
 def test_index(val):
     s, (symbol, ix) = val
@@ -182,14 +196,9 @@ def test_index(val):
     assert r.symbol == symbol, (r.symbol, symbol)
     assert r.index == ix, (r.index, ix)
 
-
-@composite
-def expansion_strategy(draw, elements=one_of(env_strategy(), index_strategy())):
-    x, expected = draw(elements)
-    return '<<{}>>'.format(x), expected
     
 
-@given(expansion_strategy())
+@given(expansions())
 def test_expansion(val):
     s, expected = val
     r = expansion.parseString(s)
@@ -208,7 +217,7 @@ def test_expansion(val):
 
 @composite
 def index_object(draw):
-    string, (symbol, value) = draw(index_strategy())
+    string, (symbol, value) = draw(indices())
 
     class dummy(object):
         pass
@@ -237,7 +246,7 @@ def test_transform(datum):
     from functools import partial
     ih = partial(index_handler, object)
 
-    transform(expansion, [env_handler, ih], string
+    transform(expansion, [env_handler, ih], string)
 
     
 
