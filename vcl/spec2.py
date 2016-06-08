@@ -1,5 +1,6 @@
 
 import parser
+from parser import Parser
 
 import random
 import copy
@@ -170,8 +171,7 @@ class ClusterLoader(object):
         spec_dict = yaml.load(yaml_string)
 
         visitor = SpecificationVisitor(
-            handlers = [parser.env_handler,
-                        partial(parser.index_handler, cluster)],
+            handlers = [parser.env_handler],
             context  = cluster,
         )
         
@@ -239,7 +239,8 @@ class SpecificationVisitor(HasTraits):
         ### statefullness)
 
 
-        parsed = parser.keyword.parseString(key)
+        p = Parser()
+        parsed = p.keyword.parseString(key)
         
         if parsed.directive == 'inherit':
             # This replaces the <<inherits:...>> keyword with the target.
@@ -312,8 +313,8 @@ class SpecificationVisitor(HasTraits):
         return node
 
 
-    # def visit_str(self, node):
-    #     return parser.transform(parser.expansion, self.handlers, node)
+    def visit_str(self, node):
+        return Parser.transform('expansion', self.handlers, node)
 
 
 ##################################################

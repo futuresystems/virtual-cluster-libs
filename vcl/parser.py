@@ -4,6 +4,7 @@ from pyparsing import CaselessLiteral, Literal, Optional, Word,\
 import pyparsing
 from string import ascii_letters,  digits, letters, punctuation
 import copy
+import os
 
 
 ################################################################################
@@ -43,49 +44,94 @@ def Directive(literal):
 env_var_name_alphabet_init = letters
 env_var_name_alphabet_rest = letters + '_'
 env_var_vals_alphabet = digits + letters + punctuation + ' \t'
-
-
-start = Literal('<<')
-end = Literal('>>')
-delim = Literal(':')
-
 symbol_alphabet = (letters, letters + digits + '_.')
 
-symbol = Word(*symbol_alphabet).setResultsName('symbol')
-
-env_var_name = Word(env_var_name_alphabet_init,
-                    env_var_name_alphabet_rest)\
-                    .setResultsName('env')
-
-env_directive = Directive('env')
-env = env_directive + delim + env_var_name
-
-index_value = Word(digits)\
-        .setResultsName('index')\
-        .setParseAction(lambda s, loc, toks: int(toks['index']))
-              
-index = Directive('index') \
-        + delim + symbol \
-        + Optional(delim + symbol.setResultsName('attribute')) \
-        + delim + index_value
-expansion = start + (env ^ index) + end
 
 
-inherit = Directive('inherit') + delim + symbol
-forall = Directive('forall') + delim + symbol \
-         + Optional(delim + symbol.setResultsName('attribute'))
+class Parser(object):
 
-keyword = start + (inherit ^ index ^ forall) + end
+    def __init__(self):
 
+        start = Literal('<<')
+        end = Literal('>>')
+        delim = Literal(':')
+
+        symbol = Word(*symbol_alphabet).setResultsName('symbol')
+
+        env_var_name = Word(env_var_name_alphabet_init,
+                            env_var_name_alphabet_rest)\
+                            .setResultsName('env')
+
+        env_directive = Directive('env')
+        env = env_directive + delim + env_var_name
+
+        index_value = Word(digits)\
+                .setResultsName('index')\
+                .setParseAction(lambda s, loc, toks: int(toks['index']))
+
+        index = Directive('index') \
+                + delim + symbol \
+                + Optional(delim + symbol.setResultsName('attribute')) \
+                + delim + index_value
+        expansion = start + (env ^ index) + end
+
+
+        inherit = Directive('inherit') + delim + symbol
+        forall = Directive('forall') + delim + symbol \
+                 + Optional(delim + symbol.setResultsName('attribute'))
+
+        keyword = start + (inherit ^ index ^ forall) + end
+
+
+        self.start = start
+        self.end = end
+        self.delim = delim
+        self.symbol = symbol
+        self.env = env
+        self.index = index
+        self.expansion = expansion
+        self.inherit = inherit
+        self.forall = forall
+        self.keyword = keyword
+
+
+    @classmethod
+    def transform(cls, parsername, handlers, string):
+        P = cls()
+        parser = getattr(P, parsername)
+        for h in handlers:
+            parser.addParseAction(h)
+        return parser.transformString(string)
+
+
+p = Parser()
+start = p.start
+end = p.end
+delim = p.delim
+symbol = p.symbol
+env = p.env
+index = p.index
+expansion = p.expansion
+inherit = p.inherit
+forall = p.forall
+keyword = p.keyword
+
+
+################################################################################
+## some handlers
+################################################################################
+
+def env_handler(tokens):
+    print 'Expanding', tokens.env
+    return os.getenv(tokens.env)
 
 
 ################################################################################
 ## tests
 ################################################################################
 
-from hypothesis import given, example, assume
-from hypothesis.strategies import text, composite, one_of, sampled_from, integers, binary, fractions, decimals, floats, booleans, lists, tuples, just
-from pyparsing import ParseException
+from hypothesis import given, example
+from hypothesis.strategies import text, composite, one_of, sampled_from, integers, lists, just, none
 
 from easydict import EasyDict
 from functools import partial
@@ -239,52 +285,13 @@ def test_keywords(val):
     assert keyword.parseString(s)
 
 
-@composite
-def index_object(draw):
-    string, (symbol, value) = draw(indices())
-
-    class dummy(object):
-        pass
-
-    fields = symbol.split('.')
-    start = dummy()
-    obj = start
-
-    for f in fields[:-1]:
-        new = dummy()
-        setattr(obj, f, new)
-        obj = new
-    setattr(obj, fields[-1], value)
-
-    return dict(object=start,
-                string=string,
-                symbol=symbol,
-                value=value,)
-
-
-@given(index_object())
-def test_transform(datum):
-    object = datum['object']
-    string = datum['string']
-
-    from functools import partial
-    ih = partial(index_handler, object)
-
-    transform(expansion, [env_handler, ih], string)
-
-    
-
-    # scope = datum['object']
-    # name = datum['name']
-    # value = datum['value']
-
-
 
 def run_tests():
     test_literal()
     test_env()
     test_index()
     test_expansion()
+    test_keywords()
 
 
 if __name__ == '__main__':
