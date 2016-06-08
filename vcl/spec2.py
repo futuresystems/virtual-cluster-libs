@@ -130,18 +130,9 @@ class Cluster(HasTraits):
     services = T.Trait(ServiceGroup)
     vars = T.List(T.Trait(AnsibleVars))
 
-    # @classmethod
-    # def load_yaml(cls, yaml_string, expand=True):
-
-
-        # visitor = parser.Visitor(
-        #     handlers = [parser.env_handler,
-        #                 parser.index_handler],
-        #     context  = cluster,
-        # )
-        # d2 = visit(d)
-
-        # return cluster
+    @classmethod
+    def load_yaml(cls, yaml_string):
+        return ClusterLoader.load_yaml(yaml_string)
 
 
 class ClusterLoader(object):
@@ -375,5 +366,9 @@ def _load_host_vars(root):
 
 
 def test(path):
-    c = ClusterLoader.load_yaml(open(path).read())
+    c = Cluster.load_yaml(open(path).read())
     return c
+
+
+if __name__ == '__main__':
+    test('cluster.yaml')
