@@ -7,9 +7,8 @@ logger = logging.getLogger(__name__)
 
 import random
 import copy
-from functools import partial
-import collections
 import operator
+
 
 import traits.api as T
 from traits.api import HasTraits, TraitHandler
@@ -227,6 +226,7 @@ class SpecificationVisitor(HasTraits):
 
     handlers = T.List()
     context  = T.Trait(Cluster)
+
 
     def _getSymbolBy(self, getter, instance, symbol):
         names = symbol.split('.')
