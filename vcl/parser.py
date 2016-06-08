@@ -70,6 +70,12 @@ index = index_directive + delim + symbol + delim + index_value
 expansion = start + (env ^ index) + end
 
 ################################################################################
+
+inherit = Directive('inherit') + delim + symbol
+forall = Directive('forall') + delim + symbol
+
+keyword = start + (inherit ^ index ^ forall) + end
+
 ## handlers
 ################################################################################
 
@@ -163,6 +169,28 @@ def expansions(draw):
     return '<<{}>>'.format(x), es
 
 
+@composite
+def inherits(draw):
+    directive = draw(sampled_from('inherit inHERit INHERIT'.split()))
+    symbol = draw(symbols())
+    s = '{}:{}'.format(directive, symbol)
+    return s, expected(directive=directive.lower(), symbol=symbol)
+
+
+@composite
+def foralls(draw):
+    directive = draw(sampled_from('forall foRAll FORALL'.split()))
+    symbol = draw(symbols())
+    s = '{}:{}'.format(directive, symbol)
+    return s, expected(directive=directive.lower(), symbol=symbol)
+
+
+@composite
+def keywords(draw):
+    k, expected = draw(one_of(inherits(), foralls()))
+    return '<<{}>>'.format(k), expected
+
+
 ################################################## tests
 
 @given(one_of(just(':'), just('<<'), just('>>')))
@@ -208,6 +236,32 @@ def test_expansion(val):
         assertEQ(r.index, expected.index)
     else:
         raise ValueError('Unknown directive {}'.format(r['directive']))
+
+
+@given(inherits())
+def test_inherit(val):
+    s, expected = val
+    r = inherit.parseString(s)
+    assert 'directive' in r.keys()
+    assert 'symbol' in r.keys()
+    assertEQ(r.directive, expected.directive)
+    assertEQ(r.symbol, expected.symbol)
+
+
+@given(foralls())
+def test_forall(val):
+    s, expected = val
+    r = forall.parseString(s)
+    assert 'directive' in r.keys()
+    assert 'symbol' in r.keys()
+    assertEQ(r.directive, expected.directive)
+    assertEQ(r.symbol, expected.symbol)
+
+
+@given(keywords())
+def test_keywords(val):
+    s, expected = val
+    assert keyword.parseString(s)
 
 
 @composite
