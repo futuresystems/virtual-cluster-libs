@@ -1,9 +1,24 @@
 
 from pyparsing import CaselessLiteral, Literal, Optional, Word,\
     pyparsing_common
+import pyparsing
 from string import ascii_letters,  digits, letters, punctuation
 import copy
 
+
+################################################################################
+## utils
+################################################################################
+
+def lowerDirective(tokens):
+    """Downcase the `directive` token
+    """
+    return tokens.directive.lower()
+
+
+################################################################################
+## parser
+################################################################################
 
 """
 Expansions are defined as follows:
@@ -17,6 +32,13 @@ env_var_name := alphanumeric | "-" | "_" | "+"
 symbol := alpha [alpha | digit | "."]
 enumerate := "enumerate" delim symbol_list delim integer
 """
+
+def Directive(literal):
+    return \
+        CaselessLiteral(literal)\
+        .setResultsName('directive')\
+        .setParseAction(lowerDirective)
+
 
 env_var_name_alphabet_init = letters
 env_var_name_alphabet_rest = letters + '_'
@@ -35,14 +57,10 @@ env_var_name = Word(env_var_name_alphabet_init,
                     env_var_name_alphabet_rest)\
                     .setResultsName('env')
 
-env_directive = CaselessLiteral('env')\
-                .setResultsName('directive')\
-                .setParseAction(lambda toks: toks['directive'].lower())
+env_directive = Directive('env')
 env = env_directive + delim + env_var_name
 
-index_directive = CaselessLiteral('index')\
-                  .setResultsName('directive')\
-                  .setParseAction(lambda toks: toks['directive'].lower())
+index_directive = Directive('index')
 
 index_value = Word(digits)\
         .setResultsName('index')\
@@ -89,9 +107,20 @@ def transform(parser, actions, string):
 ################################################################################
 
 from hypothesis import given, example, assume
-from hypothesis.strategies import text, composite, one_of, sampled_from, integers, binary, fractions, decimals, floats, booleans, lists, tuples
+from hypothesis.strategies import text, composite, one_of, sampled_from, integers, binary, fractions, decimals, floats, booleans, lists, tuples, just
 from pyparsing import ParseException
 
+from easydict import EasyDict
+from functools import partial
+import operator
+
+def expected(**kws):
+    return EasyDict(kws)
+
+def assertOp(op, left, right):
+    assert op(left, right), (left, right)
+
+assertEQ = partial(assertOp, operator.eq)
 
 ################################################## strategies
 
@@ -113,7 +142,7 @@ def indices(draw): #  I couldn't bring myself to use 'indexes'
 
     index = draw(integers(min_value=0))
     r = '{}:{}:{}'.format(directive, symbol, index)
-    return r, (symbol, index)
+    return r, expected(symbol=symbol, index=index)
 
 
 @composite
@@ -124,57 +153,22 @@ def envs(draw):
     name = name_start + name_rest
 
     result = '{}:{}'.format(directive, name)
-    return result, name
+    return result, expected(name=name)
 
 
 @composite
 def expansions(draw):
     elements = one_of(envs(), indices())
-    x, expected = draw(elements)
-    return '<<{}>>'.format(x), expected
+    x, es = draw(elements)
+    return '<<{}>>'.format(x), es
 
 
 ################################################## tests
 
-
-class LiteralParserTesters(object):
-
-    def _test(self, literal, parser, example):
-        if example.startswith(literal):
-            assert parser.parseString(example)
-        else: # should throw exception
-            try:
-                parser.parseString(example)
-            except Exception as e:
-                assert isinstance(e, ParseException), e
-            else:
-                raise ValueError(example)
-
-    def run(self):
-        self.test_start()
-        self.test_end()
-        self.test_delim()
-
-
-    @given(text())
-    @example('<<')
-    def test_start(self, s):
-        assume(len(s.strip()) > 0)
-        self._test('<<', start, s)
-
-
-    @given(text())
-    @example('>>')
-    def test_end(self, s):
-        assume(len(s.strip()) > 0)
-        self._test('>>', end, s)
-
-
-    @given(text())
-    @example(':')
-    def test_delim(self, s):
-        assume(len(s.strip()) > 0)
-        self._test(':', delim, s)
+@given(one_of(just(':'), just('<<'), just('>>')))
+def test_literal(lit):
+    p = delim ^ start ^ end
+    assert p.parseString(lit)
 
 
 @given(envs())
@@ -182,19 +176,20 @@ def test_env(val):
     s, expected = val
     r = env.parseString(s)
     assert 'env' in r.keys()
-    assert r['env'] == expected, (r['env'], expected)
+    assertEQ(r.env, expected.name)
 
 
 
 @given(indices())
-@example(('index:foo.bar:42',('foo.bar',42)))
+@example(('index:foo.bar:42', expected(symbol='foo.bar', index=42)))
 def test_index(val):
-    s, (symbol, ix) = val
+    s, expected = val
     r = index.parseString(s)
     assert 'index' in r.keys()
     assert 'symbol' in r.keys()
-    assert r.symbol == symbol, (r.symbol, symbol)
-    assert r.index == ix, (r.index, ix)
+
+    assertEQ(r.symbol, expected.symbol)
+    assertEQ(r.index, expected.index)
 
     
 
@@ -203,14 +198,14 @@ def test_expansion(val):
     s, expected = val
     r = expansion.parseString(s)
     assert 'directive' in r.keys()
-    if r['directive'] == 'env':
+    if r.directive == 'env':
         assert 'env' in r.keys()
-        assert r['env'] == expected
-    elif r['directive'] == 'index':
+        assertEQ(r.env, expected.name)
+    elif r.directive == 'index':
         assert 'index' in r.keys()
         assert 'symbol' in r.keys()
-        assert r.symbol == expected[0]
-        assert r.index == expected[1]
+        assertEQ(r.symbol, expected.symbol)
+        assertEQ(r.index, expected.index)
     else:
         raise ValueError('Unknown directive {}'.format(r['directive']))
 
@@ -257,7 +252,7 @@ def test_transform(datum):
 
 
 def run_tests():
-    LiteralParserTesters().run()
+    test_literal()
     test_env()
     test_index()
     test_expansion()
