@@ -5,6 +5,7 @@ import random
 import copy
 from functools import partial
 import collections
+import operator
 
 import traits.api as T
 from traits.api import HasTraits
@@ -124,7 +125,7 @@ class Cluster(HasTraits):
 
     uuid = T.UUID()
     provider = T.Trait(Provider)
-    machines = T.Dict(T.String(), T.Trait(Machine))  # name -> Machine
+    machines = T.List(Machine)
     services = T.Trait(ServiceGroup)
     vars = T.List(T.Trait(AnsibleVars))
 
@@ -155,7 +156,7 @@ class ClusterLoader(object):
         hostvars = _load_host_vars(d.host_vars)
 
         cluster  = Cluster(
-            machines = dict([(m.name, m) for m in machines]),
+            machines = machines,
             services = services,
             vars = [hostvars],
         )
@@ -171,6 +172,7 @@ class ClusterLoader(object):
         visitor = SpecificationVisitor(
             handlers = [parser.env_handler,
                         partial(parser.index_handler, cluster)],
+            context  = cluster,
         )
         
         transformed = visitor.transform(spec_dict)
@@ -188,6 +190,29 @@ class ClusterLoader(object):
 class SpecificationVisitor(HasTraits):
 
     handlers = T.List()
+    context  = T.Trait(Cluster)
+
+    def _getSymbolBy(self, getter, instance, symbol):
+        names = symbol.split('.')
+        i = instance
+        for name in names:
+            if not name: break
+            i = getter(i, name)
+        return i
+
+    def _getObjectSymbol(self, obj, symbol):
+        return self._getSymbolBy(getattr, obj, symbol)
+
+
+    def _getDictSymbol(self, dictionary, symbol):
+        return self._getSymbolBy(operator.getitem, dictionary, symbol)
+
+
+    def _getSymbol(self, value, symbol):
+        if isinstance(value, dict):
+            return self._getDictSymbol(value, symbol)
+        else:
+            return self._getObjectSymbol(value, symbol)
 
 
     def transform(self, spec):
@@ -206,20 +231,76 @@ class SpecificationVisitor(HasTraits):
         return visitor(node)
 
 
-    def visit_dict(self, node):
-        inherit = '<<inherit>>'
-        if inherit in node:
-            name = node[inherit]
-            path = name.split('.')
-            new  = self.spec
-            for key in path:
-                new = new[key]
-            del node['<<inherit>>']
-            for k,v in node.iteritems():
-                new[k] = v
-            node = new
+    def transform_dict(self, node, key):
 
-        for k in node.keys():
+
+        ### don't use pyparsing's addParseAction as this causes
+        ### bizarre errors (likely due to some pyparsing
+        ### statefullness)
+
+
+        parsed = parser.keyword.parseString(key)
+        
+        if parsed.directive == 'inherit':
+            # This replaces the <<inherits:...>> keyword with the target.
+
+            spec = self._getDictSymbol(self.spec, parsed.symbol)
+            spec = copy.copy(spec)
+            del node[key]
+            for k, v in node.iteritems():
+                spec[k] = v
+
+            for k, v in spec.iteritems():
+                node[k] = v
+
+
+        elif parsed.directive == 'index':
+            seq = self._getObjectSymbol(self.context, parsed.symbol)
+
+            for variable in node[key].keys():
+                for i, val in enumerate(seq, parsed.index):
+                    k = self._getSymbol(val, parsed.attribute)
+                    if k not in node:
+                        node[k] = dict()
+                    node[k][variable] = i
+            del node[key]
+
+
+        elif parsed.directive == 'forall':
+            seq = self._getObjectSymbol(self.context, parsed.symbol)
+
+            for variable, value in node[key].iteritems():
+                for val in seq:
+                    k = self._getSymbol(val, parsed.attribute)
+                    if k not in node:
+                        node[k] = dict()
+                    node[k][variable] = value
+            del node[key]
+
+        else:
+            raise ValueError("I don't know how to handle directive {}"
+                             .format(parsed.directive))
+
+
+    def visit_dict(self, node):
+
+        seen = set()
+
+        while True:
+            keys = set(node.keys())
+
+            try:
+                k = keys.difference(seen).pop()
+            except KeyError:
+                break
+
+            if k.startswith('<<') and k.endswith('>>'):
+                self.transform_dict(node, k)
+            seen.add(k)
+
+
+        for k in node:
+            print 'Visiting', k
             node[k] = self.visit(node[k])
 
         return node
@@ -231,9 +312,8 @@ class SpecificationVisitor(HasTraits):
         return node
 
 
-    def visit_str(self, node):
-        print node
-        return parser.transform(parser.expansion, self.handlers, node)
+    # def visit_str(self, node):
+    #     return parser.transform(parser.expansion, self.handlers, node)
 
 
 ##################################################

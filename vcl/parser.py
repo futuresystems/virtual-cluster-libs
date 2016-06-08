@@ -60,22 +60,24 @@ env_var_name = Word(env_var_name_alphabet_init,
 env_directive = Directive('env')
 env = env_directive + delim + env_var_name
 
-index_directive = Directive('index')
-
 index_value = Word(digits)\
         .setResultsName('index')\
         .setParseAction(lambda s, loc, toks: int(toks['index']))
               
-index = index_directive + delim + symbol + delim + index_value
+index = Directive('index') \
+        + delim + symbol \
+        + Optional(delim + symbol.setResultsName('attribute')) \
+        + delim + index_value
 expansion = start + (env ^ index) + end
 
-################################################################################
 
 inherit = Directive('inherit') + delim + symbol
-forall = Directive('forall') + delim + symbol
+forall = Directive('forall') + delim + symbol \
+         + Optional(delim + symbol.setResultsName('attribute'))
 
 keyword = start + (inherit ^ index ^ forall) + end
 
+################################################################################
 ## handlers
 ################################################################################
 
@@ -145,10 +147,11 @@ def indices(draw): #  I couldn't bring myself to use 'indexes'
     directive = draw(sampled_from('index Index INdex INDex INDEx INDEX'.split()))
 
     symbol = '.'.join(draw(lists(symbols(), min_size=1)))
+    attr   = draw(symbols())
 
     index = draw(integers(min_value=0))
-    r = '{}:{}:{}'.format(directive, symbol, index)
-    return r, expected(symbol=symbol, index=index)
+    r = '{}:{}:{}:{}'.format(directive, symbol, attr, index)
+    return r, expected(symbol=symbol, attribute=attr, index=index)
 
 
 @composite
@@ -181,7 +184,10 @@ def inherits(draw):
 def foralls(draw):
     directive = draw(sampled_from('forall foRAll FORALL'.split()))
     symbol = draw(symbols())
+    attr   = draw(one_of(none(), symbols()))
     s = '{}:{}'.format(directive, symbol)
+    if attr:
+        s += ':{}'.format(attr)
     return s, expected(directive=directive.lower(), symbol=symbol)
 
 

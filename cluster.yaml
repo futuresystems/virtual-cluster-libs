@@ -23,10 +23,10 @@ defaults:
             accept: 0.0.0.0/0
             protocol: tcp
     futuresystems:
-      <<inherit>>: defaults.cloud.openstack
+      <<inherit:defaults.cloud.openstack>>:
       image: Ubuntu-14.04-64
     chameleon:
-      <<inherit>>: defaults.cloud.openstack
+      <<inherit:defaults.cloud.openstack>>:
       image: CC-Ubuntu14.04
 
 
@@ -73,8 +73,11 @@ machines:
 
 
 host_vars:
-  <<index:services.zookeeper.machines:1>>: zookeeper_id
-  <<forall:machines>>:
+  <<index:services.zookeeper.machines:name:1>>:
+    zookeeper_id:
+  <<forall:machines:name>>:
     this_var_a: is the same for all machines
-  <<forall:machines.services.hadoop>>:
+  <<forall:services.hadoop.machines:name>>:
     this_var_b: is defined (and identical) only the "hadoop" nodes
+  <<forall:services.zookeeper.machines:name>>:
+    this_var_c: is defined only on zookeeper nodes
