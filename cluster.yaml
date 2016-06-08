@@ -28,6 +28,7 @@ defaults:
     chameleon:
       <<inherit:defaults.cloud.openstack>>:
       image: CC-Ubuntu14.04
+      create_floating_ip: true
 
 
 services:
