@@ -77,37 +77,6 @@ forall = Directive('forall') + delim + symbol \
 
 keyword = start + (inherit ^ index ^ forall) + end
 
-################################################################################
-## handlers
-################################################################################
-
-def env_handler(token):
-    import os
-    var = token.env
-    return os.getenv(var)
-
-
-def index_handler(scope, token):
-    print 'hello'
-    return 'FOOBAR'
-    # namespace = token.symbol.split('.')
-    # obj = scope
-    # for attr in namespace:
-    #     obj = getattr(obj, attr)
-
-    # assert isinstance(obj, Sequence)
-    # for i, x in enumerate(obj, token.index):
-    #     yield i
-
-
-
-def transform(parser, actions, string):
-    if '<<env:OS_PROJECT_NAME>>-net' in string:
-        import pdb; pdb.set_trace()
-    
-    parser_copy = copy.copy(parser)
-    parser_copy.addParseAction(*actions)
-    return parser_copy.transformString(string)
 
 
 ################################################################################
