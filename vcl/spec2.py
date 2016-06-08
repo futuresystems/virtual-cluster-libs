@@ -9,7 +9,7 @@ import collections
 import operator
 
 import traits.api as T
-from traits.api import HasTraits
+from traits.api import HasTraits, TraitHandler
 
 import yaml
 from easydict import EasyDict
@@ -57,12 +57,53 @@ class ServiceGroup(HasTraits):
         return iter(self.services)
 
 
+class IPv4TraitHandler(TraitHandler):
+
+    def _components(self, value):
+        parts = value.split('.')
+        if len(parts) != 4:
+            return False, parts
+
+        asints = map(int, parts)
+        for part in asints:
+            if not 0 <= part <= 255:
+                return False, part
+
+        return True, value
+
+
+    def validate(self, object, name, value):
+        pred, _ = self._components(value)
+        if pred:
+            return value
+
+        else:
+            self.error(object, name, value)
+
+    def info(self):
+        return "**an IPv4 address**"
+
+
+class AddressT(HasTraits):
+    internal = T.Trait(IPv4TraitHandler())
+    external = T.Trait(IPv4TraitHandler())
+
+
+class Auth(HasTraits):
+    public_key = T.File()
+    private_key = T.File()
+
+
+
 class Machine(HasTraits):
 
     uuid = T.UUID()
     name = T.String()
     services = T.Set(Service)
     provider = T.Trait(Provider)
+    auth = T.Trait(Auth)
+    address = AddressT()
+    defaults = T.Trait(EasyDict)
 
 
     def __str__(self):
