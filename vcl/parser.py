@@ -1,10 +1,15 @@
 
+import logger as logging
+logger = logging.getLogger(__name__)
+
+
 from pyparsing import CaselessLiteral, Literal, Optional, Word,\
     pyparsing_common
 import pyparsing
 from string import ascii_letters,  digits, letters, punctuation
 import copy
 import os
+
 
 
 ################################################################################
@@ -123,9 +128,10 @@ keyword = p.keyword
 
 def env_handler(tokens):
     val = os.getenv(tokens.env)
-    print 'Expanding', tokens.env, '=>', val
     if val is None:
-        print 'WARNING: no value for', tokens.env, ', skipping'
+        logger.warning('no value for {}, skipping'.format(tokens.env))
+    else:
+        logger.info('Expanding {} => {}'.format(tokens.env, val))
     return val
 
 

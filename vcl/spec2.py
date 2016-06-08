@@ -1,6 +1,9 @@
 
 import parser
 from parser import Parser
+import logger as logging
+
+logger = logging.getLogger(__name__)
 
 import random
 import copy
@@ -209,6 +212,7 @@ class ClusterLoader(object):
         
         transformed = visitor.transform(spec_dict)
         new_yaml_str = yaml.dump(transformed, default_flow_style=False)
+        logger.debug('New YAML:\n%s', new_yaml_str)
         return cls.phase1(new_yaml_str)
 
 
@@ -333,8 +337,10 @@ class SpecificationVisitor(HasTraits):
 
 
         for k in node:
-            print 'Visiting', k
+            logger.debug(k)
+            logger.add()
             node[k] = self.visit(node[k])
+            logger.sub()
 
         return node
 
@@ -412,4 +418,5 @@ def test(path):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     test('cluster.yaml')
