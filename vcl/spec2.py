@@ -207,14 +207,14 @@ class SpecificationVisitor(HasTraits):
 
 
     def visit_dict(self, node):
-        inherit = '<inherit>'
+        inherit = '<<inherit>>'
         if inherit in node:
             name = node[inherit]
             path = name.split('.')
             new  = self.spec
             for key in path:
                 new = new[key]
-            del node['<inherit>']
+            del node['<<inherit>>']
             for k,v in node.iteritems():
                 new[k] = v
             node = new
