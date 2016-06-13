@@ -5,6 +5,9 @@ logger = logging.getLogger(__name__)
 import camel
 
 import random
+import os
+
+import pxul.os
 
 import traits.api as T
 from traits.api import HasTraits, TraitHandler
@@ -30,8 +33,11 @@ class Service(HasTraits):
         return '<{} service>'.format(self.name)
 
     def add_machine(self, machine):
+        logger.debug('Assigning %s to %s', machine.name, self.name)
         self.machines.add(machine)
         machine.services.add(self)
+        for service in self.parents:
+            service.add_machine(machine)
 
 
 class ServiceGroup(HasTraits):
@@ -110,7 +116,7 @@ class Machine(HasTraits):
 
     def add_to(self, service):
         self.services.add(service)
-        service.machines.add(self)
+        service.add_machine(self)
 
 
 # internal use only
@@ -118,6 +124,8 @@ class _MachineCollection(HasTraits):
     machines = T.List(Machine)
 
     def assign(self, number, service):
+
+        logger.debug('Assigning %s to %s', number, service).add()
 
         if number < len(self):
             subset = random.sample(self.machines, number)
@@ -132,7 +140,10 @@ class _MachineCollection(HasTraits):
             raise ValueError(msg)
 
         for m in subset:
+            # logger.debug('Assigning %s to %s', m.name, service)
             m.add_to(service)
+
+        logger.sub()
 
 
     def append(self, item):
@@ -151,12 +162,25 @@ class AnsibleVars(HasTraits):
     kind = T.Trait(None, 'host_vars', 'group_vars')
     vars = T.Dict() # dict string (dict string (dict string string))
 
-    # def materialize(self, cwd=None):
-    #     cwd = cwd or os.getcwd()
-    #     prefix = os.path.join(cwd, self.kind)
-    #     pxul.os.ensure_dir(prefix)
+    def materialize(self, cwd=None):
+        """Writes out the variables to the appropriate files.
 
-    #     for service_name in self.vars['services']
+        This will completely overwrite the contents of the variables
+        file.
+
+        :param cwd: use this path as the current working directory
+        """
+        
+
+        cwd = cwd or os.getcwd()
+        prefix = os.path.join(cwd, self.kind)
+        pxul.os.ensure_dir(prefix)
+
+        for hostname, values in self.vars.iteritems():
+            path = os.path.join(prefix, '{}.yml'.format(hostname))
+            string = yaml.dump(dict(values), default_flow_style=False)
+            with open(path, 'w') as fd:
+                fd.write(string)
 
 
 ##################################################
@@ -223,38 +247,50 @@ class ClusterLoader(object):
 
 
 def _load_services(root):
+    assert isinstance(root, dict)
+
+    logger.info('Loading service definitions')
+
     group = ServiceGroup()
 
     for service_name in root:
+        logger.debug('Defining service {}'.format(service_name))
         group[service_name] = Service(name=service_name)
 
     for service_name in root:
         service = group[service_name]
         if root[service_name]:
+            logger.debug('Adding other services for {}'.format(service_name))
             parents = root[service_name]
             assert isinstance(parents, list)
             for parent_name in parents:
                 parent = group[parent_name]
                 service.parents.add(parent)
-
+    
     return group
 
 
 
 def _load_machines(root, services):
+    logger.info('Loading machine definitions').add()
 
     machines = list()
 
 
     for machine_name in root:
+        logger.debug('Loading definitions for {}'.format(machine_name)).add()
         collection = _MachineCollection()
 
         ### count
         count = root[machine_name].get('count', 1)
         for i in xrange(count):
-            collection.append(Machine(name='{}{:02d}'.format(machine_name,i)))
+            name = '{}{:02d}'.format(machine_name,i)            
+            logger.debug('Defining machine {}'.format(name))
+            collection.append(Machine(name=name))
+        logger.sub()
 
         ### assignments
+        logger.debug('Assigning machines').add()
         assignments = root[machine_name].get('services', [])
         for service_name in assignments:
             service = services[service_name]
@@ -268,7 +304,11 @@ def _load_machines(root, services):
 
             collection.assign(how_many, service)
 
+        logger.sub()
+
         machines.extend(collection.machines)
+
+    logger.sub()
     return machines
 
 
@@ -283,4 +323,7 @@ def _test(path):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    _test('cluster.yaml')
+    c = _test('cluster.yaml')
+    for v in c.vars:
+        v.materialize()
+    
