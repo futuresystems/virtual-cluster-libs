@@ -264,11 +264,15 @@ class SpecificationVisitor(HasTraits):
         typ  = type(node).__name__
         attr = 'visit_{}'.format(typ)
         visitor = getattr(self, attr, self.visit_generic)
+        logger.debug('Visiting type={} method={}'.format(typ, visitor.func_name))
+        logger.debug('Value="{}"'.format(repr(node)))
         return visitor(node)
 
 
     def transform_dict(self, node, key):
 
+
+        logger.debug('Transforming dict key: {}'.format(key))
 
         ### don't use pyparsing's addParseAction as this causes
         ### bizarre errors (likely due to some pyparsing
@@ -277,6 +281,7 @@ class SpecificationVisitor(HasTraits):
 
         p = Parser()
         parsed = p.keyword.parseString(key)
+        logger.debug('Parsed items: {}'.format(parsed.items()))
         
         if parsed.directive == 'inherit':
             # This replaces the <<inherits:...>> keyword with the target.
@@ -315,6 +320,7 @@ class SpecificationVisitor(HasTraits):
             del node[key]
 
         else:
+            logger.error('Unable to handle directive "{}"'.format(parsed.directive))
             raise ValueError("I don't know how to handle directive {}"
                              .format(parsed.directive))
 
@@ -323,6 +329,7 @@ class SpecificationVisitor(HasTraits):
 
         seen = set()
 
+        logger.debug('Visiting dict keys')
         while True:
             keys = set(node.keys())
 
@@ -331,13 +338,14 @@ class SpecificationVisitor(HasTraits):
             except KeyError:
                 break
 
+            logger.debug('Processing key "{}"'.format(k))
             if k.startswith('<<') and k.endswith('>>'):
                 self.transform_dict(node, k)
             seen.add(k)
 
 
+        logger.debug('Visiting dict values')
         for k in node:
-            logger.debug(k)
             logger.add()
             node[k] = self.visit(node[k])
             logger.sub()
@@ -347,7 +355,9 @@ class SpecificationVisitor(HasTraits):
 
     def visit_list(self, node):
         for i in xrange(len(node)):
+            logger.add()
             node[i] = self.visit(node[i])
+            logger.sub()
         return node
 
 
