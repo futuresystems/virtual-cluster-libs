@@ -1,13 +1,10 @@
 
-import logger as logging
+import vcl.logger as logging
 logger = logging.getLogger(__name__)
 
 
-from pyparsing import CaselessLiteral, Literal, Optional, Word,\
-    pyparsing_common
-import pyparsing
-from string import ascii_letters,  digits, letters, punctuation
-import copy
+from pyparsing import CaselessLiteral, Literal, Optional, Word
+from string import  digits, letters, punctuation
 import os
 
 
