@@ -18,8 +18,20 @@ from easydict import EasyDict
 
 class Provider(HasTraits):
 
-    uuid = T.UUID()
     name = T.String()
+    parameters = T.Trait(EasyDict)
+
+    def __getattr__(self, attr):
+        return getattr(self.parameters, attr)
+
+
+class Cloud(HasTraits):
+
+    name = T.String()
+    parameters = T.Trait(EasyDict)
+
+    def __getattr__(self, attr):
+        return getattr(self.parameters, attr)
 
 
 class Service(HasTraits):
@@ -105,13 +117,14 @@ class Machine(HasTraits):
     name = T.String()
     services = T.Set(Service)
     provider = T.Trait(Provider)
+    cloud = T.Trait(Cloud)
     auth = T.Trait(Auth)
     address = AddressT()
     defaults = T.Trait(EasyDict)
 
 
     def __str__(self):
-        return '<node {} on {}>'.format(self.name, self.provider)
+        return '<node {} on {}>'.format(self.name, self.cloud)
 
 
     def add_to(self, service):
@@ -189,6 +202,7 @@ class Cluster(HasTraits):
 
     uuid = T.UUID()
     provider = T.Trait(Provider)
+    cloud = T.Trait(Cloud)
     machines = T.List(Machine)
     services = T.Trait(ServiceGroup)
     vars = T.List(T.Trait(AnsibleVars))
@@ -206,11 +220,15 @@ class ClusterLoader(object):
         d = yaml.safe_load(yaml_string)
         d = EasyDict(d)
 
+        provider = Provider(parameters=d.defaults.provider)
+        cloud = Cloud(parameters=d.defaults.cloud)
         services = _load_services(d.services)
         machines = _load_machines(d.machines, services)
         hostvars = _load_host_vars(d.host_vars)
 
         cluster  = Cluster(
+            provider = provider,
+            cloud = cloud,
             machines = machines,
             services = services,
             vars = [hostvars],

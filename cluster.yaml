@@ -4,8 +4,9 @@ defaults:
   auth:
     public_key: ~/.ssh/id_rsa.pub
     private_key: ~/.ssh/id_rsa
-  cloud:
+  provider:
     openstack:
+      prefix: <<env:USER>>-
       flavor: m1.small
       key_name: <<env:HOSTNAME>>
       network: <<env:OS_PROJECT_NAME>>-net
@@ -22,20 +23,27 @@ defaults:
           - port: 80,443,8080
             accept: 0.0.0.0/0
             protocol: tcp
+      poll_until_active_seconds: 1
+      timeout_until_active_seconds: 360
     futuresystems:
-      <<inherit:defaults.cloud.openstack>>:
+      <<inherit:defaults.provider.openstack>>:
       image: Ubuntu-14.04-64
     chameleon:
-      <<inherit:defaults.cloud.openstack>>:
+      <<inherit:defaults.provider.openstack>>:
       image: CC-Ubuntu14.04
       create_floating_ip: true
+  cloud:
+    name: futuresystems
+    parameters:
+      <<inherit:defaults.provider.futuresystems>>:
+
 
 
 services:
   zookeeper:
   namenode:
     - hadoop
-  journalenode:
+  journalnode:
     - hadoop
   historyserver:
     - hadoop
@@ -57,13 +65,16 @@ machines:
       zookeeper:
       namenode:
         assign: 2
-      journalenode:
+      journalnode:
         assign: 1
       historyserver: 
         assign: 1
       resourcemanager: 
         assign: 2
       datanode:
+        providers:
+          chameleon:
+            image: m1.xlarge
       frontend: 
         assign: 1
       hadoop:
