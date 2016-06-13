@@ -412,11 +412,11 @@ def _load_host_vars(root):
     return AnsibleVars(kind='host_vars', vars=root)
 
 
-def test(path):
+def _test(path):
     c = Cluster.load_yaml(open(path).read())
     return c
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
-    test('cluster.yaml')
+    _test('cluster.yaml')
