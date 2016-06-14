@@ -116,7 +116,6 @@ class Machine(HasTraits):
     uuid = T.String()
     name = T.String()
     services = T.Set(Service)
-    provider = T.Trait(Provider)
     cloud = T.Trait(Cloud)
     auth = T.Trait(Auth)
     address = AddressT()
