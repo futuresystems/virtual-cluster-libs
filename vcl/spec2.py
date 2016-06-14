@@ -323,6 +323,7 @@ class ClusterLoader(object):
     def load_yaml(cls, yaml_string):
         cluster = cls.phase1(yaml_string)
         cluster = cls.phase2(yaml_string, cluster)
+        cluster = cls.phase3(cluster)
         return cluster
 
 
