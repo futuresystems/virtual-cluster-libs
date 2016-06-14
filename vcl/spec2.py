@@ -222,9 +222,26 @@ class Cluster(HasTraits):
     services = T.Trait(ServiceGroup)
     vars = T.List(T.Trait(AnsibleVars))
 
+
+    def assign_to_cloud(self, cloudname):
+        assert cloudname in self.provider.keys()
+
+        if self.cloud is not None:
+            logger.warning('Overriding previous cloud %s with %s',
+                           self.cloud.name, cloudname)
+
+        self.cloud = Cloud(name=cloudname, parameters=self.provider.parameters[cloudname])
+        for m in self.machines:
+            m.cloud = self.cloud
+
     @classmethod
-    def load_yaml(cls, yaml_string):
-        return ClusterLoader.load_yaml(yaml_string)
+    def load_yaml(cls, string):
+        if os.path.exists(string):
+            with open(string) as fd:
+                return ClusterLoader.load_yaml(fd.read())
+        else:
+            return ClusterLoader.load_yaml(string)
+
 
 
 class ClusterLoader(object):
@@ -284,6 +301,23 @@ class ClusterLoader(object):
         logger.debug('New YAML:\n%s', new_yaml_str)
         return cls.phase1(new_yaml_str)
 
+
+    @classmethod
+    def phase3(cls, cluster):
+        """Third pass through to make any final adjustments
+
+        :param cluster: the cluster
+        :returns: the modified (in place) cluster
+        :rtype: Cluster
+        """
+
+        logger.debug('Running Phase 3')
+
+        logger.debug('Assign machines to the specified cloud')
+        if cluster.cloud is not None:
+            cluster.assign_to_cloud(cluster.cloud.name)
+
+        return cluster
 
     @classmethod
     def load_yaml(cls, yaml_string):
