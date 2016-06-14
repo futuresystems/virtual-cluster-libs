@@ -89,9 +89,11 @@ def boot(cluster, dry_run=False, **kws):
     nova = get_client()
     state = State(storage='.machines')
 
+    logger.mem_save('boot')
+
     for node in cluster.machines:
         node_name = cluster.cloud.prefix + node.name
-        logger.info('Booting %s as %s on', node.name, node_name, node.cloud.name)
+        logger.mem('boot').info('Booting %s as %s on %s', node.name, node_name, node.cloud.name).add()
 
         image_name = node.cloud.image
         flavor_name = node.cloud.flavor
@@ -123,9 +125,9 @@ def boot(cluster, dry_run=False, **kws):
         ################################################## boot
 
         try:
-            logger.info('Checking if already booted').add()
+            logger.info('Checking if already booted')
             nova.servers.find(name=node_name)
-            logger.info('...true').sub()
+            logger.info('...true')
             continue
         except novaclient.exceptions.NotFound:
 
