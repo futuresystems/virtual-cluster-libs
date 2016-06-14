@@ -73,7 +73,7 @@ machines:
         assign: 1
       hadoop:
   datanode:
-    count: 10
+    count: 2
     services:
       datanode:
     providers:
