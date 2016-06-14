@@ -7,6 +7,8 @@
 import logger as logging
 logger = logging.getLogger(__name__)
 
+import os.path
+
 import traits.api as T
 from traits.api import HasTraits
 
@@ -19,9 +21,13 @@ class State(HasTraits):
     state = T.DictStrAny()
 
     def _read(self):
-        logger.debug('Reading state from %s', self.storage)
-        with open(self.storage) as fd:
-            return yaml.safe_load(fd)
+        if os.path.exists(self.storage):
+            logger.debug('Reading state from %s', self.storage)
+            with open(self.storage) as fd:
+                return yaml.safe_load(fd)
+        else:
+            logger.debug('Creating in-memory state object')
+            return dict()
 
 
     def _write(self):
