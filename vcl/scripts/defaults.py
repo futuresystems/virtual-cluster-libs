@@ -5,4 +5,4 @@ machines_filename = '.machines.yml'
 
 
 import logger
-loglevel = logger.info
+loglevel = logger.INFO
