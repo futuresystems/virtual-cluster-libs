@@ -237,7 +237,6 @@ class Cluster(HasTraits):
             m.cloud = self.cloud
 
 
-    def get_inventory_dict(self):
     def get_inventory_json(self):
         """Generates the inventory as json
 
