@@ -514,6 +514,5 @@ def _test(path):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
     c = _test('cluster.yaml')
-    for v in c.vars:
-        v.materialize()
+    print c.get_inventory_ini()
     
