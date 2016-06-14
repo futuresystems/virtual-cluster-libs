@@ -202,3 +202,6 @@ def boot(cluster, dry_run=False, **kws):
 
         ################################################## save
         state.set_machine(node)
+
+
+    logger.mem_clear('boot')
