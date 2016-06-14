@@ -71,16 +71,16 @@ def wait_until(expr, sleep_time=1, max_time=60):
     import time
     slept = 0
     while not expr():
-        msg = '{} / {}'.format(slept+sleep_time, max_time)
-        sys.stdout.write(msg)
-        sys.stdout.flush()
-        sys.stdout.write('\b' * len(msg))
+        msg = '{} / {} seconds'.format(slept+sleep_time, max_time)
+        sys.stderr.write(msg)
+        sys.stderr.flush()
+        sys.stderr.write('\b' * len(msg))
         time.sleep(sleep_time)
         slept += sleep_time
         if slept >= max_time:
-            print(msg + ' Timed out')
+            logger.critical(msg + ' Timed out')
             raise RuntimeError, 'Timeout while waiting for {}'.format(expr)
-    print(msg + '...done')
+    logger.info(msg + '...done')
 
 
 
