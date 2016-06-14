@@ -164,16 +164,16 @@ def boot(cluster, dry_run=False, **kws):
             try:
                 # first try to get a free ip
                 floating_ip = nova.floating_ips.findall(instance_id=None)[0]
-                logger.info('...using %s', floating_ip)
+                logger.info('...using %s', floating_ip.ip)
             except IndexError:
                 pool = node.cloud.floating_ip_pool
                 floating_ip = nova.floating_ips.create(pool=pool)
-                logger.info('...allocated %s from pool %s', floating_ip, pool)
+                logger.info('...allocated %s from pool %s', floating_ip.ip, pool)
 
             logger.info('...associating')
             vm.add_floating_ip(floating_ip)
 
-            node.address.external = floating_ip
+            node.address.external = floating_ip.ip
             logger.info('...done')
 
 
