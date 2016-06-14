@@ -321,7 +321,7 @@ def _load_services(root):
 
 
 
-def _load_machines(root, services):
+def _load_machines(root, services, defaults):
     logger.info('Loading machine definitions').add()
 
     machines = list()
@@ -353,6 +353,20 @@ def _load_machines(root, services):
                 how_many = howmany_default
 
             collection.assign(how_many, service)
+
+        # auth
+        logger.debug('Setting auth for collection %s', machine_name)
+        public_key  = root[machine_name].get('public_key', defaults.auth.public_key)
+        private_key = root[machine_name].get('private_key', defaults.auth.private_key)
+        auth = Auth(public_key=public_key, private_key=private_key)
+        collection.set_auth(auth)
+
+
+        # cloud
+        logger.debug('Setting cloud for collection %s', machine_name)
+        cloudname = root[machine_name].get('cloud', defaults.cloud)
+        collection.set_cloud(cloudname, defaults.provider)
+
 
         logger.sub()
 
