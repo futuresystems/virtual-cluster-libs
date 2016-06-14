@@ -8,6 +8,9 @@ def getLogger(name):
 
 basicConfig = logging.basicConfig
 
+logging.getLogger('requests').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+
 
 CRITICAL = logging.CRITICAL
 ERROR = logging.ERROR
