@@ -102,7 +102,6 @@ def boot(cluster, dry_run=False, **kws):
         sec_groups = node.cloud.security_groups
 
         if dry_run:
-            yield node
             continue
 
         ################################################## upload key if needed
@@ -203,4 +202,3 @@ def boot(cluster, dry_run=False, **kws):
 
         ################################################## save
         state.set_machine(node)
-        yield node
