@@ -69,9 +69,6 @@ machines:
       resourcemanager: 
         assign: 2
       datanode:
-        providers:
-          chameleon:
-            image: m1.xlarge
       frontend: 
         assign: 1
       hadoop:
@@ -79,6 +76,9 @@ machines:
     count: 10
     services:
       datanode:
+    providers:
+      chameleon:
+        image: m1.xlarge
 
 
 host_vars:
