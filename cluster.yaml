@@ -32,10 +32,7 @@ defaults:
       <<inherit:defaults.provider.openstack>>:
       image: CC-Ubuntu14.04
       create_floating_ip: true
-  cloud:
-    name: futuresystems
-    parameters:
-      <<inherit:defaults.provider.futuresystems>>:
+  cloud: # chameleon
 
 
 
