@@ -6,6 +6,7 @@ import camel
 
 import random
 import os
+import json
 
 import pxul.os
 
@@ -236,6 +237,18 @@ class Cluster(HasTraits):
 
 
     def get_inventory_dict(self):
+    def get_inventory_json(self):
+        """Generates the inventory as json
+
+        See Cluster.get_inventory_dict
+
+        :returns: the inventory
+        :rtype: str
+        """
+        d = self.get_inventory_dict()
+        return json.dumps(d, sort_keys=True, indent=2, separators=(',', ': '))
+
+
         """Generates the inventory as a nested dictionary
 
         The generated inventory adheres to the convention for dynamic
