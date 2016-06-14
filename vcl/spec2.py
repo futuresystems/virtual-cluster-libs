@@ -261,9 +261,9 @@ class ClusterLoader(object):
         d = EasyDict(d)
 
         provider = Provider(parameters=d.defaults.provider)
-        cloud = Cloud(parameters=d.defaults.cloud)
+        cloud = _load_cloud(d.defaults)
         services = _load_services(d.services)
-        machines = _load_machines(d.machines, services)
+        machines = _load_machines(d.machines, services, d.defaults)
         hostvars = _load_host_vars(d.host_vars)
 
         cluster  = Cluster(
