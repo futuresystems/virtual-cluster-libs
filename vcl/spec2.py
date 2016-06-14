@@ -9,6 +9,7 @@ import os
 import json
 
 import pxul.os
+from pxul.StringIO import StringIO
 
 import traits.api as T
 from traits.api import HasTraits, TraitHandler
@@ -249,6 +250,34 @@ class Cluster(HasTraits):
         return json.dumps(d, sort_keys=True, indent=2, separators=(',', ': '))
 
 
+    def get_inventory_ini(self):
+        """Generates the inventory as ini-formatted text
+
+        See Cluster.get_inventory_dict
+
+        :returns: the inventory
+        :rtype: str
+        """
+        I = self.get_inventory_dict()
+        hostvars = I['_meta'].get('hostvars', dict())
+        s = StringIO()
+        for group, entry in I.iteritems():
+            if group == '_meta': continue
+            s.writeln('[{}]'.format(group))
+            for hostname in sorted(entry['hosts']):
+                s.write(hostname)
+                if hostname in hostvars:
+                    for varname, varval in hostvars[hostname].iteritems():
+                        if varval is None:
+                            logger.critical('%s is None for %s', varname, hostname)
+                            continue
+                        s.write(' {}={}'.format(varname, varval))
+                s.writeln('')
+            s.writeln('')
+        return s.getvalue()
+
+
+    def get_inventory_dict(self):
         """Generates the inventory as a nested dictionary
 
         The generated inventory adheres to the convention for dynamic
