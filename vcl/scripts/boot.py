@@ -46,8 +46,7 @@ def main(opts):
     global __PROVIDERS
 
     cluster = Cluster.load_yaml(opts.specfile)
-    cluster.cloud.name = opts.cloud
-    cluster.cloud.parameters = opts.provider.parameters[opts.cloud]
+    cluster.assign_to_cloud(opts.cloud)
 
     if opts.prefix:
         cluster.cloud.parameters.prefix = opts.prefix
