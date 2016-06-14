@@ -158,6 +158,22 @@ class _MachineCollection(HasTraits):
         logger.sub()
 
 
+    def set_auth(self, auth):
+        for m in self.machines:
+            logger.debug('Setting auth for %s to %s', m, auth)
+            m.auth = auth
+
+
+    def set_cloud(self, cloudname, providers):
+
+        if cloudname:
+            for m in self.machines:
+                logger.debug('Setting cloud=%s for %s', cloudname, m)
+                self.cloud = Cloud(name=cloudname,
+                                   parameters=providers[cloudname])
+        else:
+            logger.warning('No cloud defined')
+
     def append(self, item):
         self.machines.append(item)
 
