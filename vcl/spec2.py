@@ -231,6 +231,14 @@ class ClusterLoader(object):
 
     @classmethod
     def phase1(cls, yaml_string):
+        """First pas through to load the cluster definition
+
+        :param yaml_string: YAML-formatted string
+        :returns: the cluster definition
+        :rtype: Cluster
+        """
+
+        logger.debug('Running Phase 1')
 
         d = yaml.safe_load(yaml_string)
         d = EasyDict(d)
@@ -254,6 +262,15 @@ class ClusterLoader(object):
     
     @classmethod
     def phase2(cls, yaml_string, cluster):
+        """Second pass through to expand any directives
+
+        :param yaml_string: the YAML-formatted string
+        :param cluster: context
+        :returns: the cluster
+        :rtype: Cluster
+        """
+
+        logger.debug('Running Phase 2')
 
         spec_dict = yaml.safe_load(yaml_string)
 
