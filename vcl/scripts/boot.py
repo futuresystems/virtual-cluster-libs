@@ -6,8 +6,6 @@ from __future__ import absolute_import
 
 from vcl.spec2 import Cluster
 from vcl import openstack
-import yaml
-# from vcl.boot import libvirt
 
 
 __PROVIDERS = dict(
