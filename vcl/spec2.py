@@ -234,6 +234,46 @@ class Cluster(HasTraits):
         for m in self.machines:
             m.cloud = self.cloud
 
+
+    def get_inventory_dict(self):
+        """Generates the inventory as a nested dictionary
+
+        The generated inventory adheres to the convention for dynamic
+        Ansible inventories.  See here for more details:
+        https://docs.ansible.com/ansible/developing_inventory.html
+
+        :returns: the inventory
+        :rtype: dict
+
+        """
+        inventory = dict()
+        meta = dict(hostvars=dict())
+
+        for servicename in self.services:
+            service = self.services[servicename]
+            group = dict()
+            group['hosts'] = [m.name for m in service.machines]
+            inventory[service.name] = group
+
+            for machine in service.machines:
+                meta['hostvars'][machine.name] = dict()
+
+                # ansible_ssh_host
+                if machine.address.external:
+                    ip = machine.address.external
+                else:
+                    ip = machine.address.internal
+                meta['hostvars'][machine.name]['ansible_ssh_host'] = ip
+
+                # ansible_ssh_private_key
+                meta['hostvars'][machine.name]['ansible_ssh_private_key'] = machine.auth.private_key
+
+        inventory['_meta'] = meta
+
+        return inventory
+
+
+
     @classmethod
     def load_yaml(cls, string):
         if os.path.exists(string):
