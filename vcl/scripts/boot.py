@@ -34,7 +34,7 @@ def add_parser(p):
                    help='Don\'t actually do anything')
     p.add_argument('--machines', '-m', metavar='FILE', default=machines_filename,
                    help='The machine file to write')
-    p.add_argument('--prefix', '-P', metavar='STR', default=Name, type=str,
+    p.add_argument('--prefix', '-P', metavar='STR', default=None, type=str,
                    help='Prefix the name (not hostname) with this string')
     p.add_argument('--timeout-until-active-seconds', '-a', default=None, type=int,
                    help='Number of seconds to wait for a node to become ACTIVE before giving up')
