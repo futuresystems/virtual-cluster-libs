@@ -60,17 +60,17 @@ def main(opts):
 
     openstack.boot(cluster, dry_run=opts.dry_run)
 
-    with open(opts.machines, 'w') as fd: fd.write('')
+    # with open(opts.machines, 'w') as fd: fd.write('')
 
-    for m in machines:
-        with open(opts.machines, 'a') as fd:
-            o = {m.hostname: m.to_simple_types()}
-            s = yaml.dump(o, default_flow_style=False)
-            fd.write(s)
+    # for m in machines:
+    #     with open(opts.machines, 'a') as fd:
+    #         o = {m.hostname: m.to_simple_types()}
+    #         s = yaml.dump(o, default_flow_style=False)
+    #         fd.write(s)
 
-    with open(opts.inventory, 'w') as fd:
-        i = inventory_format(spec)
-        fd.write(i)
+    # with open(opts.inventory, 'w') as fd:
+    #     i = inventory_format(spec)
+    #     fd.write(i)
 
     # TODO: write_inventory(opts.inventory, mod.inventory, nodes)
 

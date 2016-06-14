@@ -194,14 +194,14 @@ def boot(cluster, dry_run=False, **kws):
 
         ################################################## extra discs
 
-        for disk in node.extra_disks:
-            # cinder not support yet
-            print 'WARNING extra disks not supported yet'
-            # node.unset_dynamic('extra_disks')
+        # for disk in node.extra_disks:
+        #     # cinder not support yet
+        #     print 'WARNING extra disks not supported yet'
+        #     # node.unset_dynamic('extra_disks')
 
 
-        ################################################## save
-        state.set_machine(node)
+        # ################################################## save
+        # state.set_machine(node)
 
 
     logger.mem_clear('boot')
