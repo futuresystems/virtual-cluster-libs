@@ -376,6 +376,16 @@ def _load_machines(root, services, defaults):
     return machines
 
 
+def _load_cloud(root):
+    if root.cloud is None:
+        return None
+    else:
+        assert 'name' in root.cloud.keys(), root.cloud.keys()
+        assert 'parameters' in root.cloud.keys(), root.cloud.keys()
+        return Cloud(name=root.cloud.name,
+                     parameters=root.cloud.parameters)
+
+
 def _load_host_vars(root):
     return AnsibleVars(kind='host_vars', vars=root)
 
