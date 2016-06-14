@@ -113,7 +113,7 @@ class Auth(HasTraits):
 
 class Machine(HasTraits):
 
-    uuid = T.UUID()
+    uuid = T.String()
     name = T.String()
     services = T.Set(Service)
     provider = T.Trait(Provider)
