@@ -4,7 +4,7 @@ Boot virtual machines
 
 from __future__ import absolute_import
 
-from vcl.spec2 import Cluster
+from vcl.specification import Cluster
 from vcl import openstack
 from vcl.state import State
 
