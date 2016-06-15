@@ -6,6 +6,7 @@ from __future__ import absolute_import
 
 from vcl.spec2 import Cluster
 from vcl import openstack
+from vcl.state import State
 
 
 __PROVIDERS = dict(
@@ -57,8 +58,8 @@ def main(opts):
     if opts.timeout_until_active_seconds:
         cluster.cloud.parameters.timeout_until_active_seconds = opts.timeout_until_active_seconds
 
-
-    openstack.boot(cluster, dry_run=opts.dry_run)
+    state = State(path=opts.machines)
+    openstack.boot(cluster, state, dry_run=opts.dry_run)
 
     # with open(opts.machines, 'w') as fd: fd.write('')
 

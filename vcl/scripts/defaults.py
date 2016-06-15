@@ -1,7 +1,7 @@
 
 spec_filename = 'cluster.yaml'
 inventory_filename = 'inventory.txt'
-machines_filename = '.machines.yml'
+machines_filename = '.cluster.dat'
 
 
 import logger

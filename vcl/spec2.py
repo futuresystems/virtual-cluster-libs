@@ -38,7 +38,7 @@ class Cloud(HasTraits):
 
 class Service(HasTraits):
 
-    uuid = T.UUID()
+    uuid = T.String()
     name = T.String()
     machines = T.Set()
     parents = T.Set()
@@ -56,7 +56,7 @@ class Service(HasTraits):
 
 class ServiceGroup(HasTraits):
 
-    uuid = T.UUID()
+    uuid = T.String()
     services = T.Dict(T.String, Service)
 
     def __getitem__(self, name):
@@ -217,7 +217,7 @@ class AnsibleVars(HasTraits):
 
 class Cluster(HasTraits):
 
-    uuid = T.UUID()
+    uuid = T.String()
     provider = T.Trait(Provider)
     cloud = T.Trait(Cloud)
     machines = T.List(Machine)

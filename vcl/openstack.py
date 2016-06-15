@@ -2,9 +2,6 @@
 import logger as logging
 logger = logging.getLogger(__name__)
 
-from state import State
-
-
 import novaclient
 import novaclient.exceptions
 
@@ -84,10 +81,9 @@ def wait_until(expr, sleep_time=1, max_time=60):
 
 
 
-def boot(cluster, dry_run=False, **kws):
+def boot(cluster, state, dry_run=False, **kws):
 
     nova = get_client()
-    state = State(storage='.machines')
 
     logger.mem_save('boot')
 
@@ -125,10 +121,12 @@ def boot(cluster, dry_run=False, **kws):
 
         try:
             logger.info('Checking if already booted')
-            nova.servers.find(name=node_name)
+            booted = nova.servers.find(name=node_name)
+            if not state.has_machine(booted.id):
+                raise KeyError
             logger.info('...true')
             continue
-        except novaclient.exceptions.NotFound:
+        except (novaclient.exceptions.NotFound, KeyError):
 
             logger.info('Creating %s', node_name)
             vm = nova.servers.create(
@@ -200,8 +198,8 @@ def boot(cluster, dry_run=False, **kws):
         #     # node.unset_dynamic('extra_disks')
 
 
-        # ################################################## save
-        # state.set_machine(node)
+        ################################################## save
+        state.set_machine(node)
 
 
     logger.mem_clear('boot')
