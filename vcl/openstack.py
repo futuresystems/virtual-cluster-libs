@@ -1,4 +1,10 @@
 
+import logger as logging
+logger = logging.getLogger(__name__)
+
+from state import State
+
+
 import novaclient
 import novaclient.exceptions
 
@@ -65,47 +71,47 @@ def wait_until(expr, sleep_time=1, max_time=60):
     import time
     slept = 0
     while not expr():
-        msg = '{} / {}'.format(slept+sleep_time, max_time)
-        sys.stdout.write(msg)
-        sys.stdout.flush()
-        sys.stdout.write('\b' * len(msg))
+        msg = '{} / {} seconds'.format(slept+sleep_time, max_time)
+        sys.stderr.write(msg)
+        sys.stderr.flush()
+        sys.stderr.write('\b' * len(msg))
         time.sleep(sleep_time)
         slept += sleep_time
         if slept >= max_time:
-            print(msg + ' Timed out')
+            logger.critical(msg + ' Timed out')
             raise RuntimeError, 'Timeout while waiting for {}'.format(expr)
-    print(msg + '...done')
+    logger.info(msg + '...done')
 
 
 
-def boot(nodes, prefix='', dry_run=False,
-         waitForActiveSleep=1,
-         waitForActiveTimeout=60,
-         **kws):
+def boot(cluster, dry_run=False, **kws):
 
     nova = get_client()
+    state = State(storage='.machines')
 
-    for node in nodes:
-        node_name = prefix + node.hostname
-        print node.hostname, '->', node_name
+    logger.mem_save('boot')
 
-        image_name = node.image
-        flavor_name = node.flavor
-        key_name = node.key_name
-        net_name = node.network
-        sec_groups = node.security_groups
+    for node in cluster.machines:
+        node_name = cluster.cloud.prefix + node.name
+        logger.mem('boot').info('Booting %s as %s on %s', node.name, node_name, node.cloud.name).add()
+
+        image_name = node.cloud.image
+        flavor_name = node.cloud.flavor
+        key_name = node.cloud.key_name
+        net_name = node.cloud.network
+        sec_groups = node.cloud.security_groups
 
         if dry_run:
-            yield node
             continue
 
         ################################################## upload key if needed
 
         try:
-            print('-> Looking for key {}'.format(key_name))
+            logger.info('Looking for key %s', key_name)
             nova.keypairs.find(name=key_name)
         except novaclient.exceptions.NotFound:
-            print('...not found, adding {} as {}'.format(node.public_key, key_name))
+            logger.info('...not found, adding %s as %s',
+                        node.public_key, key_name)
             path = node.public_key
             key  = open(fullpath(path)).read()
             nova.keypairs.create(key_name, key)
@@ -118,13 +124,13 @@ def boot(nodes, prefix='', dry_run=False,
         ################################################## boot
 
         try:
-            print('-> Checking if already booted')
+            logger.info('Checking if already booted')
             nova.servers.find(name=node_name)
-            print '...true'
+            logger.info('...true')
             continue
         except novaclient.exceptions.NotFound:
 
-            print('-> Creating {}'.format(node_name))
+            logger.info('Creating %s', node_name)
             vm = nova.servers.create(
                 node_name,
                 image,
@@ -132,47 +138,48 @@ def boot(nodes, prefix='', dry_run=False,
                 key_name=key_name,
                 nics=nics
             )
+            node.uuid = vm.id
 
         def is_active():
             instance = nova.servers.get(vm.id)
             return instance.status == 'ACTIVE'
 
-        print '-> Waiting until ACTIVE ',
-        wait_until(is_active, sleep_time=waitForActiveSleep, max_time=waitForActiveTimeout)
+        logger.info('Waiting until ACTIVE ')
+        wait_until(is_active,
+                   sleep_time=cluster.cloud.parameters.poll_until_active_seconds,
+                   max_time=cluster.cloud.parameters.timeout_until_active_seconds)
 
 
         ################################################## security groups
 
         for name in sec_groups:
-            print('-> Adding to security group {}'.format(name))
+            logger.info('Adding to security group %s', name)
             vm.add_security_group(name)
 
 
         ################################################## floating ip
 
-        if node.create_floating_ip:
-            print('-> Adding floating ip')
+        if node.cloud.create_floating_ip:
+            logger.info('Adding floating ip')
             try:
                 # first try to get a free ip
                 floating_ip = nova.floating_ips.findall(instance_id=None)[0]
-                print('...using {}'.format(floating_ip))
+                logger.info('...using %s', floating_ip.ip)
             except IndexError:
-                pool = node.floating_ip_pool
+                pool = node.cloud.floating_ip_pool
                 floating_ip = nova.floating_ips.create(pool=pool)
-                print('...allocated {} from pool {}'.format(floating_ip, pool))
+                logger.info('...allocated %s from pool %s', floating_ip.ip, pool)
 
-            print('...associating')
+            logger.info('...associating')
             vm.add_floating_ip(floating_ip)
 
-            # usefull for regenerating a spec file
-            node.floating_ip = floating_ip.ip
-            # node.set_dynamic('floating_ip', str(ip.ip))
-            print('...done')
+            node.address.external = floating_ip.ip
+            logger.info('...done')
 
 
         ################################################## internal ip
 
-        print('-> Geting internal ip')
+        logger.info('Getting internal ip')
         instance = nova.servers.get(vm.id)
         addresses = instance.addresses[net_name]
         fixed_addresses = [
@@ -182,16 +189,19 @@ def boot(nodes, prefix='', dry_run=False,
         ]
         assert len(fixed_addresses) == 1, fixed_addresses
         internal_ip = fixed_addresses[0]
-        node.ip = internal_ip
-        print('...done')
+        node.address.internal = internal_ip
+        logger.info('...done')
 
         ################################################## extra discs
 
-        for disk in node.extra_disks:
-            # cinder not support yet
-            print 'WARNING extra disks not supported yet'
-            # node.unset_dynamic('extra_disks')
+        # for disk in node.extra_disks:
+        #     # cinder not support yet
+        #     print 'WARNING extra disks not supported yet'
+        #     # node.unset_dynamic('extra_disks')
 
 
-        ################################################## save
-        yield node
+        # ################################################## save
+        # state.set_machine(node)
+
+
+    logger.mem_clear('boot')

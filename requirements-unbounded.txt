@@ -4,3 +4,6 @@ pyyaml
 traits
 easydict
 -e git://github.com/badi/pxul@v2.0.0#egg=pxul
+pyparsing
+hypothesis
+python_log_indenter

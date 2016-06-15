@@ -1,0 +1,92 @@
+
+
+defaults:
+  auth:
+    public_key: ~/.ssh/id_rsa.pub
+    private_key: ~/.ssh/id_rsa
+  provider:
+    openstack:
+      prefix: <<env:USER>>-
+      flavor: m1.small
+      key_name: <<env:HOSTNAME>>
+      network: <<env:OS_PROJECT_NAME>>-net
+      create_floating_ip: false
+      floating_ip_pool: ext-net
+      security_groups: ["default"]
+      available_security_groups:
+        default:
+          - port: 22
+            accept: 0.0.0.0/0
+            protocol: tcp
+          - protocol: icmp
+        web:
+          - port: 80,443,8080
+            accept: 0.0.0.0/0
+            protocol: tcp
+      poll_until_active_seconds: 1
+      timeout_until_active_seconds: 360
+    futuresystems:
+      <<inherit:defaults.provider.openstack>>:
+      image: Ubuntu-14.04-64
+    chameleon:
+      <<inherit:defaults.provider.openstack>>:
+      image: CC-Ubuntu14.04
+      create_floating_ip: true
+  cloud: # chameleon
+
+
+
+services:
+  zookeeper:
+  namenode:
+    - hadoop
+  journalnode:
+    - hadoop
+  historyserver:
+    - hadoop
+  resourcemanager:
+    - hadoop
+  datanode:
+    - hadoop
+  hadoop:
+  frontend:
+  gluster:
+  loadbalancer:
+
+
+
+machines:
+  controller:
+    count: 3
+    services:
+      zookeeper:
+      namenode:
+        assign: 2
+      journalnode:
+        assign: 1
+      historyserver: 
+        assign: 1
+      resourcemanager: 
+        assign: 2
+      datanode:
+      frontend: 
+        assign: 1
+      hadoop:
+  datanode:
+    count: 2
+    services:
+      datanode:
+    providers:
+      chameleon:
+        image: m1.xlarge
+
+
+host_vars:
+  <<index:services.zookeeper.machines:name:1>>:
+    zookeeper_id:
+  <<forall:machines:name>>:
+    this_var_a: is the same for all machines
+  <<forall:services.hadoop.machines:name>>:
+    this_var_b: is defined (and identical) only the "hadoop" nodes
+  <<forall:services.zookeeper.machines:name>>:
+    this_var_c: is defined only on zookeeper nodes
