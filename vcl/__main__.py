@@ -2,6 +2,8 @@
 import logger as logging
 logger = logging.getLogger(__name__)
 
+import scripts.defaults as defaults
+
 import sys
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 import collections
@@ -36,21 +38,24 @@ def main():
 
 
     opts = parser.parse_args()
-    set_verbosity_level(opts)
+    configure_logger(opts)
     opts.func(opts)
 
 
-def set_verbosity_level(opts):
+def configure_logger(opts):
     if not opts.verbose:
-        logging.basicConfig(level=logging.CRITICAL)
+        level = logging.CRITICAL
     elif opts.verbose == 1:
-        logging.basicConfig(level=logging.WARNING)
+        level = logging.WARNING
     elif opts.verbose == 2:
-        logging.basicConfig(level=logging.INFO)
+        level = logging.INFO
     elif opts.verbose >= 3:
-        logging.basicConfig(level=logging.DEBUG)
+        level = logging.DEBUG
     else:
         raise ValueError('Verbosity cannot be < 0: %s' % opts.verbose)
+
+    logging.basicConfig(level=level,
+                        format=defaults.logformat)
 
 
 if __name__ == '__main__':
