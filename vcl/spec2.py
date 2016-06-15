@@ -102,7 +102,7 @@ class IPv4TraitHandler(TraitHandler):
         return "**an IPv4 address**"
 
 
-class AddressT(HasTraits):
+class Address(HasTraits):
     internal = T.Trait(IPv4TraitHandler())
     external = T.Trait(IPv4TraitHandler())
 
@@ -120,7 +120,7 @@ class Machine(HasTraits):
     services = T.Set(Service)
     cloud = T.Trait(Cloud)
     auth = T.Trait(Auth)
-    address = AddressT()
+    address = T.Trait(Address())
     defaults = T.Trait(EasyDict)
 
 

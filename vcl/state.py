@@ -97,3 +97,16 @@ class State(HasTraits):
 
         """
         return self._has_key('machines', uuid)
+
+
+    def set_cluster(self, cluster):
+        """Store the current state of the cluster
+
+        :param cluster: the cluster to store
+        :type cluster: :py:class:`Cluster`
+        """
+        self._set('cluster', lambda: 'cluster.dat', cluster)
+
+
+    def get_cluster(self):
+        return self._get('cluster', lambda: 'cluster.dat')
