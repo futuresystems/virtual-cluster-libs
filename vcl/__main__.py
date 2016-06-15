@@ -11,6 +11,7 @@ import collections
 import vcl.scripts.boot
 import vcl.scripts.list_machines
 import vcl.scripts.ssh
+import vcl.scripts.inventory
 
 def main():
 
@@ -18,6 +19,7 @@ def main():
     subcmds['boot'] = vcl.scripts.boot
     subcmds['list'] = vcl.scripts.list_machines
     subcmds['ssh' ] = vcl.scripts.ssh
+    subcmds['inventory'] = vcl.scripts.inventory
 
 
     parser = ArgumentParser() #formatter_class=ArgumentDefaultsHelpFormatter)
