@@ -11,7 +11,7 @@ import logger as logging
 logger = logging.getLogger(__name__)
 
 import os.path
-import shelve
+import pickle
 
 import traits.api as T
 from traits.api import HasTraits
@@ -21,17 +21,17 @@ import pxul.os
 
 class State(HasTraits):
     """State provides a single-namespace-separated key/value persistent
-    store.  Values are saved by key under a specified namespace.
-    Namespaces cannot be nested.
+    store.  Values are saved by key under a specified namespace
+    separated by forward slashes (/).
+
     """
 
-    path = T.File()
+    path = T.Directory()
 
     def __init__(self, *args, **kwargs):
         super(State, self).__init__(*args, **kwargs)
         self.path = pxul.os.fullpath(self.path)
-        pxul.os.ensure_dir(os.path.dirname(self.path))
-        self._store = shelve.open(self.path)
+        pxul.os.ensure_dir(self.path)
 
 
     def _set(self, namespace, keyfn, item):
@@ -44,22 +44,26 @@ class State(HasTraits):
         :param item: a pickle-able value
         """
 
-        if namespace not in self._store.keys():
-            logger.debug('Creating namespace %s', namespace)
-            self._store[namespace] = dict()
+        pxul.os.ensure_dir(os.path.join(self.path, namespace))
 
-        key = keyfn()
+        key = os.path.join(self.path, namespace, keyfn())
 
-        logger.debug('Saving state %s.%s', namespace, key)
+        logger.debug('Saving state %s', key)
 
-        if key in self._store[namespace]:
-            logger.warn('%s.%s already stored, overwriting',
-                        namespace, key)
+        if os.path.exists(key):
+            logger.warn('%s already stored, overwriting', key)
 
-        space = self._store[namespace]
-        space[key] = item
-        self._store[namespace] = space
-        self._store.sync()
+        with open(key, 'wb') as fd:
+            pickle.dump(item, fd)
+
+
+    def _get(self, namespace, keyfn):
+
+        key = os.path.join(self.path, namespace, keyfn())
+        logger.debug('Getting %s', key)
+
+        with open(key, 'rb') as fd:
+            return pickle.load(fd)
 
 
     def _has_key(self, namespace, key):
@@ -70,8 +74,7 @@ class State(HasTraits):
         :returns: True or False
         :rtype: bool
         """
-        return  namespace in self._store \
-            and key in self._store[namespace]
+        return os.path.exists(os.path.join(self.path, namespace, key))
 
 
     def set_machine(self, machine):

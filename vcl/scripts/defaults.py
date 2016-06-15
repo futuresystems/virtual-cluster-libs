@@ -1,7 +1,7 @@
 
 spec_filename = 'cluster.yaml'
 inventory_filename = 'inventory.txt'
-machines_filename = '.cluster.dat'
+machines_filename = '.cluster'
 inventory_filename = '-' # stdout
 
 
