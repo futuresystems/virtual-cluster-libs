@@ -61,6 +61,11 @@ def main(opts):
     state = State(path=opts.machines)
     openstack.boot(cluster, state, dry_run=opts.dry_run)
 
+    with open(opts.inventory, 'w') as fd:
+        i = cluster.get_inventory_ini()
+        fd.write(i)
+
+
 
 
 if __name__ == '__main__':
