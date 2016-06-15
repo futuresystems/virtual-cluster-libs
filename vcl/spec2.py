@@ -124,6 +124,14 @@ class Machine(HasTraits):
     defaults = T.Trait(EasyDict)
 
 
+    @property
+    def ip(self):
+        if self.address.external:
+            return self.address.external
+        else:
+            return self.address.internal
+
+
     def __str__(self):
         return '<node {} on {}>'.format(self.name, self.cloud)
 
@@ -223,6 +231,16 @@ class Cluster(HasTraits):
     machines = T.List(Machine)
     services = T.Trait(ServiceGroup)
     vars = T.List(T.Trait(AnsibleVars))
+
+
+    def find_machine_by_name(self, name):
+        if not hasattr(self, '_machines_lookup'):
+            self._machines_lookup = dict()
+            for m in self.machines:
+                self._machines_lookup[m.name] = m
+
+        if name in self._machines_lookup:
+            return self._machines_lookup[name]
 
 
     def assign_to_cloud(self, cloudname):
