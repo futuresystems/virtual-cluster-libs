@@ -3,3 +3,5 @@ build
 .machines.yml
 venv
 .hypothesis
+.cluster.dat
+inventory.txt
