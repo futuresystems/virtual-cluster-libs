@@ -4,22 +4,23 @@ List running VMs
 
 from __future__ import absolute_import
 
-from vcl.specification import load_machines
+from vcl.state import State
 
 
 def add_parser(p):
 
     from .defaults import machines_filename
 
-    p.add_argument('--machines', '-m', metavar='FILE',
+    p.add_argument('--state', '-s', metavar='FILE',
                    default=machines_filename,
-                   help='Path to the machines file')
+                   help='Path to the persistent state')
 
 
 
 def main(opts):
 
-    machines = load_machines(opts.machines)
+    state = State(path=opts.state)
+    cluster = state.get_cluster()
 
-    for hostname in machines:
-        print hostname
+    for m in cluster.machines:
+        print m.name
