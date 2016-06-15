@@ -190,13 +190,6 @@ def boot(cluster, state, dry_run=False, **kws):
         node.address.internal = internal_ip
         logger.info('...done')
 
-        ################################################## extra discs
-
-        # for disk in node.extra_disks:
-        #     # cinder not support yet
-        #     print 'WARNING extra disks not supported yet'
-        #     # node.unset_dynamic('extra_disks')
-
 
         ################################################## save
         state.set_machine(node)
